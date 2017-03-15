@@ -1,0 +1,4 @@
+Vanilla	14
+Chocolate	58
+Strawberry	38
+Mixed	22

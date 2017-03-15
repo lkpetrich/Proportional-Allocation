@@ -1,0 +1,52 @@
+ California	37253956	53
+ Texas	25145561	36
+ New York	19378102	27
+ Florida	18801310	27
+ Illinois	12830632	18
+ Pennsylvania	12702379	18
+ Ohio	11536504	16
+ Georgia	9687653	14
+ Michigan	9883640	14
+ North Carolina	9535483	13
+ New Jersey	8791894	12
+ Virginia	8001024	11
+ Washington	6724540	10
+ Massachusetts	6547629	9
+ Arizona	6392017	9
+ Indiana	6483802	9
+ Tennessee	6346105	9
+ Missouri	5988927	8
+ Maryland	5773552	8
+ Wisconsin	5686986	8
+ Minnesota	5303925	8
+ Colorado	5029196	7
+ Alabama	4779736	7
+ South Carolina	4625364	7
+ Louisiana	4533372	6
+ Kentucky	4339367	6
+ Oregon	3831074	5
+ Oklahoma	3751351	5
+ Puerto Rico	3725789	0
+ Connecticut	3574097	5
+ Iowa	3046355	4
+ Mississippi	2967297	4
+ Arkansas	2915918	4
+ Kansas	2853118	4
+ Utah	2763885	4
+ Nevada	2700551	4
+ New Mexico	2059179	3
+ Nebraska	1826341	3
+ West Virginia	1852994	3
+ Idaho	1567582	2
+ Hawaii	1360301	2
+ Maine	1328361	2
+ New Hampshire	1316470	2
+ Rhode Island	1052567	2
+ Montana	989415	1
+ Delaware	897934	1
+ South Dakota	814180	1
+ Alaska	710231	1
+ North Dakota	672591	1
+ District of Columbia	601723	0
+ Vermont	625741	1
+ Wyoming	563626	1

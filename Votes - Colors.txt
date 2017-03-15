@@ -1,0 +1,3 @@
+Red	299
+Green	587
+Blue	114

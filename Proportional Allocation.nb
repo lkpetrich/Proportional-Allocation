@@ -1,0 +1,860 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     27673,        852]
+NotebookOptionsPosition[     25328,        779]
+NotebookOutlinePosition[     25686,        795]
+CellTagsIndexPosition[     25643,        792]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["\<\
+Proportional Allocation
+
+These are for proportional representation from votes,
+given some total number of seats
+
+Implements both highest averages and largest remainders.
+
+In these methods, Votes is a list of {party, # votes, initial # seats}
+
+Initializers for these allocation functions:
+
+AddInitial[Votes, Initial=0] takes a list of {party, # votes}
+and adds Initial (default 0) seats to each
+
+AddRoundedDown[Votes, Seats] takes a list of (party, # votes)
+and adds the rounded-down proportional number of seats to each
+
+
+HighestAverages[Divisor function, Votes, Seats]
+Divisor function, votes, number of seats to fill
+The divisor function takes the number of seats that a party currently has and \
+returns a value. This value ought to tend to some multiple of the number of \
+seats as it gets large.
+
+NamedHighestAverages[Name, Votes, Seats]
+Name:
+\[OpenCurlyDoubleQuote]D\[CloseCurlyQuote]Hondt\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Sainte-Lague\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Modified Sainte-Lague\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Danish\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Imperiali\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Huntington-Hill\[CloseCurlyDoubleQuote]
+In HANames
+
+
+LargestRemainder[Quota Adjust, Votes, Seats]
+Quota-adjustment value, votes, number of seats to fill
+
+NamedLargestRemainder[Name, Votes, Seats]
+Name:
+\[OpenCurlyDoubleQuote]Hare\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Droop\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Imperiali\[CloseCurlyDoubleQuote]
+In LRNames
+
+
+http://en.wikipedia.org/wiki/Highest_averages_method - Highest-averages \
+method
+http://en.wikipedia.org/wiki/D%27Hondt_method - D\[CloseCurlyQuote]Hondt method
+http://en.wikipedia.org/wiki/Sainte-Lagu%C3%AB_method - Sainte-Lague method
+http://en.wikipedia.org/wiki/Huntington-Hill_method - Huntington-Hill method
+http://en.wikipedia.org/wiki/Largest_remainder_method - Largest-remainder \
+method\
+\>", "Text"],
+
+Cell[CellGroupData[{
+
+Cell["Algorithms", "Section"],
+
+Cell[CellGroupData[{
+
+Cell["Initializing the votes", "Subsection"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{"Add", " ", "constant", " ", "initial", " ", 
+   RowBox[{"allocation", ":", "\[IndentingNewLine]", 
+    RowBox[{"Default", " ", "is", " ", "zero"}]}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AddInitial", "[", 
+   RowBox[{"votes_", ",", " ", 
+    RowBox[{"initial_:", "0"}]}], "]"}], " ", ":=", " ", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"Append", "[", 
+     RowBox[{
+      RowBox[{"#", "[", 
+       RowBox[{"[", 
+        RowBox[{";;", "2"}], "]"}], "]"}], ",", "initial"}], "]"}], "&"}], 
+   " ", "/@", " ", "votes"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"Add", " ", "the", " ", "rounded"}], "-", 
+    RowBox[{"down", " ", "number", " ", "of", " ", 
+     RowBox[{"votes", ":", 
+      RowBox[{
+       RowBox[{"(", "total", ")"}], "/", 
+       RowBox[{"(", 
+        RowBox[{"Hare", " ", "quota"}], ")"}]}]}]}]}], ",", 
+   RowBox[{
+    RowBox[{"where", " ", 
+     RowBox[{"(", 
+      RowBox[{"Hare", " ", "quota"}], ")"}]}], "=", 
+    RowBox[{
+     RowBox[{"(", "total", ")"}], "/", 
+     RowBox[{"(", 
+      RowBox[{"number", " ", "of", " ", "seats"}], ")"}]}]}]}], " ", 
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AddRoundedDown", "[", 
+   RowBox[{"votes_", ",", " ", "seats_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", "quota", "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"quota", " ", "=", 
+      RowBox[{
+       RowBox[{"N", "[", 
+        RowBox[{"Total", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"#", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], "&"}], " ", "/@", " ", "votes"}], 
+         "]"}], "]"}], "/", "seats"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"Append", "[", 
+        RowBox[{
+         RowBox[{"#", "[", 
+          RowBox[{"[", 
+           RowBox[{";;", "2"}], "]"}], "]"}], ",", 
+         RowBox[{"Floor", "[", 
+          RowBox[{
+           RowBox[{"#", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], "/", "quota"}], "]"}]}], "]"}], 
+       "&"}], " ", "/@", " ", "votes"}]}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Input"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Highest averages", "Subsection"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HighestAverages", "[", 
+   RowBox[{"dvsrfunc_", ",", "votes_", ",", "seats_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"vlist", ",", "rmseats"}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Append", "[", 
+         RowBox[{
+          RowBox[{"#", "[", 
+           RowBox[{"[", 
+            RowBox[{";;", "3"}], "]"}], "]"}], ",", 
+          RowBox[{"N", "[", 
+           RowBox[{
+            RowBox[{"#", "[", 
+             RowBox[{"[", "2", "]"}], "]"}], "/", 
+            RowBox[{"dvsrfunc", "[", 
+             RowBox[{"#", "[", 
+              RowBox[{"[", "3", "]"}], "]"}], "]"}]}], "]"}]}], "]"}], "&"}], 
+       " ", "/@", " ", "votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"rmseats", " ", "=", " ", 
+      RowBox[{"seats", " ", "-", " ", 
+       RowBox[{"Total", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"#", "[", 
+           RowBox[{"[", "3", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
+        "]"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"While", "[", 
+      RowBox[{
+       RowBox[{"rmseats", " ", ">", " ", "0"}], ",", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"vlist", " ", "=", " ", 
+         RowBox[{"SortBy", "[", 
+          RowBox[{"vlist", ",", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", 
+               RowBox[{"#", "[", 
+                RowBox[{"[", "4", "]"}], "]"}]}], ",", 
+              RowBox[{"-", 
+               RowBox[{"#", "[", 
+                RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+              RowBox[{"#", "[", 
+               RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";",
+         "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"vlist", "[", 
+          RowBox[{"[", 
+           RowBox[{"1", ",", "3"}], "]"}], "]"}], "++"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"vlist", "[", 
+          RowBox[{"[", 
+           RowBox[{"1", ",", "4"}], "]"}], "]"}], " ", "=", " ", 
+         RowBox[{"N", "[", 
+          RowBox[{
+           RowBox[{"vlist", "[", 
+            RowBox[{"[", 
+             RowBox[{"1", ",", "2"}], "]"}], "]"}], "/", 
+           RowBox[{"dvsrfunc", "[", 
+            RowBox[{"vlist", "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "3"}], "]"}], "]"}], "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"rmseats", "--"}]}]}], "\[IndentingNewLine]", "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{"SortBy", "[", 
+       RowBox[{"vlist", ",", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}], ",", 
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"#", "[", 
+        RowBox[{"[", 
+         RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
+      "vlist"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DifferentInitial", "[", 
+   RowBox[{"dvsrfunc_", ",", "initial_", ",", "k_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"k", "\[Equal]", "0"}], ",", "initial", ",", 
+    RowBox[{"dvsrfunc", "[", "k", "]"}]}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"LinearDivisor", "[", 
+   RowBox[{"k_", ",", "d1_", ",", 
+    RowBox[{"d0_:", "1"}]}], "]"}], " ", ":=", " ", 
+  RowBox[{"d0", " ", "+", " ", 
+   RowBox[{"d1", "*", "k"}]}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<D'Hondt\>\"", "]"}], "[", "k_", "]"}], " ", 
+  ":=", " ", 
+  RowBox[{"LinearDivisor", "[", 
+   RowBox[{"k", ",", "1", ",", "1"}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<Sainte-Lague\>\"", "]"}], "[", "k_", "]"}], 
+  " ", ":=", " ", 
+  RowBox[{"LinearDivisor", "[", 
+   RowBox[{"k", ",", "2", ",", "1"}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<Modified Sainte-Lague\>\"", "]"}], "[", 
+   "k_", "]"}], " ", ":=", " ", 
+  RowBox[{"DifferentInitial", "[", 
+   RowBox[{
+    RowBox[{"HADivisor", "[", "\"\<Sainte-Lague\>\"", "]"}], ",", "1.4", ",", 
+    "k"}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<Danish\>\"", "]"}], "[", "k_", "]"}], " ", ":=",
+   " ", 
+  RowBox[{"LinearDivisor", "[", 
+   RowBox[{"k", ",", "3", ",", "1"}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<Imperiali\>\"", "]"}], "[", "k_", "]"}], 
+  " ", ":=", " ", 
+  RowBox[{"LinearDivisor", "[", 
+   RowBox[{"k", ",", "1", ",", "2"}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisor", "[", "\"\<Huntington-Hill\>\"", "]"}], "[", "k_", 
+   "]"}], " ", ":=", " ", 
+  RowBox[{"Sqrt", "[", 
+   RowBox[{"k", "*", 
+    RowBox[{"(", 
+     RowBox[{"k", "+", "1"}], ")"}]}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"NamedHighestAverages", "[", 
+   RowBox[{"name_", ",", "votes_", ",", "seats_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"HighestAverages", "[", 
+   RowBox[{
+    RowBox[{"HADivisor", "[", "name", "]"}], ",", "votes", ",", "seats"}], 
+   "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HANames", " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<D'Hondt\>\"", ",", "\"\<Sainte-Lague\>\"", ",", 
+     "\"\<Modified Sainte-Lague\>\"", ",", "\"\<Danish\>\"", ",", 
+     "\"\<Imperiali\>\"", ",", "\"\<Huntington-Hill\>\""}], "}"}]}], 
+  ";"}]], "Input"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Largest remainder", "Subsection"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"LargestRemainder", "[", 
+   RowBox[{"quotaadjust_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], 
+  " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+     "vlist", ",", "totvote", ",", "quota", ",", "sts", ",", "rmdr", ",", 
+      "vt", ",", " ", "rmseats", ",", "k"}], "}"}], ",", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", 
+         RowBox[{"[", 
+          RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
+       "votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"totvote", " ", "=", " ", 
+      RowBox[{"Total", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"#", "[", 
+          RowBox[{"[", "2", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
+       "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"quota", " ", "=", " ", 
+      RowBox[{"totvote", "/", 
+       RowBox[{"N", "[", 
+        RowBox[{"seats", " ", "+", " ", "quotaadjust"}], "]"}]}]}], ";", 
+     "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Find", " ", "the", " ", "remainders"}], " ", "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{"Table", "[", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"sts", " ", "=", " ", 
+          RowBox[{"Floor", "[", 
+           RowBox[{
+            RowBox[{"vt", "[", 
+             RowBox[{"[", "2", "]"}], "]"}], "/", "quota"}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"sts", " ", "=", " ", 
+          RowBox[{"Max", "[", 
+           RowBox[{"sts", ",", " ", 
+            RowBox[{"vt", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"rmdr", " ", "=", " ", 
+          RowBox[{
+           RowBox[{"vt", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], " ", "-", " ", 
+           RowBox[{"quota", "*", "sts"}]}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"vt", "[", 
+           RowBox[{"[", "3", "]"}], "]"}], " ", "=", " ", "sts"}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Append", "[", 
+          RowBox[{"vt", ",", "rmdr"}], "]"}]}], ",", "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"vt", ",", "vlist"}], "}"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"rmseats", " ", "=", " ", 
+      RowBox[{"seats", " ", "-", " ", 
+       RowBox[{"Total", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"#", "[", 
+           RowBox[{"[", "3", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
+        "]"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"rmseats", " ", "<", " ", "0"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{
+        "Bump", " ", "up", " ", "the", " ", "quota", " ", "and", " ", "try", 
+         " ", "again"}], " ", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Return", "[", 
+        RowBox[{"LargestRemainder", "[", 
+         RowBox[{
+          RowBox[{"quotaadjust", "-", "1"}], ",", "votes", ",", "seats"}], 
+         "]"}], "]"}]}], "\[IndentingNewLine]", "]"}], ";", 
+     "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{"SortBy", "[", 
+       RowBox[{"vlist", ",", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "4", "]"}], "]"}]}], ",", 
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "Bump", " ", "up", " ", "the", " ", "number", " ", "of", " ", "seats", 
+       " ", "for", " ", "the", " ", "parties", " ", "with", " ", "the", " ", 
+       "highest", " ", "remainders"}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"k", " ", "=", " ", "1"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"While", "[", 
+      RowBox[{
+       RowBox[{"rmseats", " ", ">", " ", "0"}], ",", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"vlist", "[", 
+          RowBox[{"[", 
+           RowBox[{"k", ",", "3"}], "]"}], "]"}], "++"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"rmseats", "--"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"Next", " ", "party"}], ";", " ", 
+          RowBox[{"wrap", " ", "around", " ", "if", " ", "necessary"}]}], " ",
+          "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"k", "++"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"k", " ", ">", " ", 
+           RowBox[{"Length", "[", "vlist", "]"}]}], ",", " ", 
+          RowBox[{"k", " ", "=", " ", "1"}]}], "]"}]}]}], 
+      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+     "\[IndentingNewLine]", 
+     RowBox[{"vlist", " ", "=", " ", 
+      RowBox[{"SortBy", "[", 
+       RowBox[{"vlist", ",", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}], ",", 
+           RowBox[{"-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"#", "[", 
+        RowBox[{"[", 
+         RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
+      "vlist"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRAdjust", "[", "\"\<Hare\>\"", "]"}], " ", "=", " ", "0"}], 
+  ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRAdjust", "[", "\"\<Droop\>\"", "]"}], " ", "=", " ", "1"}], 
+  ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRAdjust", "[", "\"\<Imperiali\>\"", "]"}], " ", "=", " ", "2"}], 
+  ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"NamedLargestRemainder", "[", 
+   RowBox[{"name_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], " ", ":=",
+   " ", 
+  RowBox[{"LargestRemainder", "[", 
+   RowBox[{
+    RowBox[{"LRAdjust", "[", "name", "]"}], ",", "votes", ",", "seats"}], 
+   "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"LRNames", " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{"\"\<Hare\>\"", ",", "\"\<Droop\>\"", ",", "\"\<Imperiali\>\""}], 
+    "}"}]}], ";"}]], "Input"]
+}, Closed]]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Examples", "Section"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{"From", " ", "a", " ", "Wikipedia", " ", "article"}], " ", 
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SampleVotes", "[", "\"\<DH\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<A\>\"", ",", "100"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<B\>\"", ",", "80"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<C\>\"", ",", "30"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<D\>\"", ",", "20"}], "}"}]}], "}"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"D", "'"}], "Hondt", " ", "target", " ", "for", " ", "8", " ", 
+    RowBox[{"seats", ":", "\[IndentingNewLine]", "A", ":", "4"}]}], ",", " ", 
+   
+   RowBox[{"B", ":", "3"}], ",", " ", 
+   RowBox[{"C", ":", "1"}], ",", " ", 
+   RowBox[{"D", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedHighestAverages", "[", 
+  RowBox[{"\"\<D'Hondt\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<DH\>\"", "]"}], "]"}], ",", "8"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{"From", " ", "a", " ", "Wikipedia", " ", "article"}], " ", 
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SampleVotes", "[", "\"\<SL\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<A\>\"", ",", "53"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<B\>\"", ",", "24"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<C\>\"", ",", "23"}], "}"}]}], "}"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"Sainte", "-", 
+    RowBox[{"Lague", " ", "target", " ", "for", " ", "7", " ", 
+     RowBox[{"seats", ":", "\[IndentingNewLine]", "A", ":", "3"}]}]}], ",", 
+   " ", 
+   RowBox[{"B", ":", "2"}], ",", " ", 
+   RowBox[{"C", ":", "2"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedHighestAverages", "[", 
+  RowBox[{"\"\<Sainte-Lague\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<SL\>\"", "]"}], "]"}], ",", "7"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+   "From", " ", "the", " ", "Wikipedia", " ", "article", " ", "on", " ", 
+    "highest"}], "-", "averages"}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<Yellow\>\"", ",", "47000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<White\>\"", ",", "16000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Red\>\"", ",", "15900"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Green\>\"", ",", "12000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Blue\>\"", ",", "6000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Pink\>\"", ",", "3100"}], "}"}]}], "}"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"D", "'"}], "Hondt", " ", "target", " ", "for", " ", "10", " ", 
+    RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}], ",", 
+   " ", 
+   RowBox[{"White", ":", "2"}], ",", " ", 
+   RowBox[{"Red", ":", "2"}], ",", " ", 
+   RowBox[{"Green", ":", "1"}], ",", " ", 
+   RowBox[{"Blue", ":", "0"}], ",", " ", 
+   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedHighestAverages", "[", 
+  RowBox[{"\"\<D'Hondt\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"Sainte", "-", 
+    RowBox[{"Lague", " ", "target", " ", "for", " ", "10", " ", 
+     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "4"}]}]}], 
+   ",", " ", 
+   RowBox[{"White", ":", "2"}], ",", " ", 
+   RowBox[{"Red", ":", "2"}], ",", " ", 
+   RowBox[{"Green", ":", "1"}], ",", " ", 
+   RowBox[{"Blue", ":", "1"}], ",", " ", 
+   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedHighestAverages", "[", 
+  RowBox[{"\"\<Sainte-Lague\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"Modified", " ", "Sainte"}], "-", 
+    RowBox[{"Lague", " ", "target", " ", "for", " ", "10", " ", 
+     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
+   ",", " ", 
+   RowBox[{"White", ":", "2"}], ",", " ", 
+   RowBox[{"Red", ":", "2"}], ",", " ", 
+   RowBox[{"Green", ":", "1"}], ",", " ", 
+   RowBox[{"Blue", ":", "0"}], ",", "  ", 
+   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedHighestAverages", "[", 
+  RowBox[{"\"\<Modified Sainte-Lague\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{
+   "Fom", " ", "the", " ", "Wikipedia", " ", "article", " ", "on", " ", 
+    "largest"}], "-", "remainder"}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<Yellow\>\"", ",", "47000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<White\>\"", ",", "16000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Red\>\"", ",", "15800"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Green\>\"", ",", "12000"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Blue\>\"", ",", "6100"}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Pink\>\"", ",", "3100"}], "}"}]}], "}"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"Highest", "-", 
+    RowBox[{
+    "Remainder", " ", "Hare", " ", "target", " ", "for", " ", "10", " ", 
+     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
+   ",", " ", 
+   RowBox[{"White", ":", "2"}], ",", " ", 
+   RowBox[{"Red", ":", "1"}], ",", " ", 
+   RowBox[{"Green", ":", "1"}], ",", " ", 
+   RowBox[{"Blue", ":", "1"}], ",", " ", 
+   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedLargestRemainder", "[", 
+  RowBox[{"\"\<Hare\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"Highest", "-", 
+    RowBox[{
+    "Remainder", " ", "Droop", " ", "target", " ", "for", " ", "10", " ", 
+     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
+   ",", " ", 
+   RowBox[{"White", ":", "2"}], ",", " ", 
+   RowBox[{"Red", ":", "2"}], ",", " ", 
+   RowBox[{"Green", ":", "1"}], ",", " ", 
+   RowBox[{"Blue", ":", "0"}], ",", " ", 
+   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"NamedLargestRemainder", "[", 
+  RowBox[{"\"\<Droop\>\"", ",", 
+   RowBox[{"AddInitial", "[", 
+    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SampleVoteNames", " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<DH\>\"", ",", "\"\<SL\>\"", ",", "\"\<HA\>\"", ",", "\"\<LR\>\""}], 
+    "}"}]}], ";"}]], "Input"]
+}, Open  ]]
+},
+WindowSize->{808, 695},
+WindowMargins->{{Automatic, 15}, {Automatic, 7}},
+FrontEndVersion->"11.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (September \
+21, 2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 2002, 54, 828, "Text"],
+Cell[CellGroupData[{
+Cell[2585, 78, 29, 0, 64, "Section"],
+Cell[CellGroupData[{
+Cell[2639, 82, 44, 0, 44, "Subsection"],
+Cell[2686, 84, 220, 4, 54, "Input"],
+Cell[2909, 90, 372, 12, 32, "Input"],
+Cell[3284, 104, 604, 19, 54, "Input"],
+Cell[3891, 125, 988, 29, 96, "Input"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[4916, 159, 38, 0, 36, "Subsection"],
+Cell[4957, 161, 3349, 93, 264, "Input"],
+Cell[8309, 256, 291, 7, 32, "Input"],
+Cell[8603, 265, 219, 6, 32, "Input"],
+Cell[8825, 273, 217, 6, 32, "Input"],
+Cell[9045, 281, 222, 6, 32, "Input"],
+Cell[9270, 289, 299, 8, 54, "Input"],
+Cell[9572, 299, 216, 6, 32, "Input"],
+Cell[9791, 307, 219, 6, 32, "Input"],
+Cell[10013, 315, 258, 8, 32, "Input"],
+Cell[10274, 325, 284, 7, 54, "Input"],
+Cell[10561, 334, 304, 8, 54, "Input"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[10902, 347, 39, 0, 36, "Subsection"],
+Cell[10944, 349, 5873, 150, 768, "Input"],
+Cell[16820, 501, 127, 4, 32, "Input"],
+Cell[16950, 507, 128, 4, 32, "Input"],
+Cell[17081, 513, 132, 4, 32, "Input"],
+Cell[17216, 519, 298, 8, 54, "Input"],
+Cell[17517, 529, 186, 5, 32, "Input"]
+}, Closed]]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[17752, 540, 27, 0, 50, "Section"],
+Cell[17782, 542, 124, 3, 32, "Input"],
+Cell[17909, 547, 458, 13, 32, "Input"],
+Cell[18370, 562, 347, 9, 54, "Input"],
+Cell[18720, 573, 210, 5, 32, "Input"],
+Cell[18933, 580, 124, 3, 32, "Input"],
+Cell[19060, 585, 380, 11, 32, "Input"],
+Cell[19443, 598, 314, 8, 54, "Input"],
+Cell[19760, 608, 215, 5, 32, "Input"],
+Cell[19978, 615, 190, 5, 32, "Input"],
+Cell[20171, 622, 648, 17, 54, "Input"],
+Cell[20822, 641, 447, 11, 75, "Input"],
+Cell[21272, 654, 211, 5, 32, "Input"],
+Cell[21486, 661, 453, 11, 75, "Input"],
+Cell[21942, 674, 216, 5, 32, "Input"],
+Cell[22161, 681, 486, 12, 75, "Input"],
+Cell[22650, 695, 225, 5, 54, "Input"],
+Cell[22878, 702, 190, 5, 32, "Input"],
+Cell[23071, 709, 648, 17, 54, "Input"],
+Cell[23722, 728, 476, 12, 75, "Input"],
+Cell[24201, 742, 209, 5, 32, "Input"],
+Cell[24413, 749, 477, 12, 75, "Input"],
+Cell[24893, 763, 210, 5, 32, "Input"],
+Cell[25106, 770, 206, 6, 32, "Input"]
+}, Open  ]]
+}
+]
+*)
+

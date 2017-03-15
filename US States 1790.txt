@@ -1,0 +1,15 @@
+Connecticut	236841	7
+Delaware	55540	2
+Georgia	70835	2
+Kentucky	68705	2
+Maryland	278514	8
+Massachusetts	475327	14
+New Hampshire	141822	4
+New Jersey	179570	5
+New York	331589	10
+North Carolina	353523	10
+Pennsylvania	432879	12
+Rhode Island	68446	2
+South Carolina	206236	6
+Vermont	85533	3
+Virginia	630560	18

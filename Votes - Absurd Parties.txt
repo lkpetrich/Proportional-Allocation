@@ -1,0 +1,7 @@
+Blowhards	132712
+Bullshitters	75232
+Extremists	60293
+Crackpots	4233
+Flakes	3342
+Nuts	207
+Fruits	0
