@@ -1,0 +1,52 @@
+California	39512223	53
+Texas	28995881	36
+Florida	21477737	27
+New York	19453561	27
+Pennsylvania	12801989	18
+Illinois	12671821	18
+Ohio	11689100	16
+Georgia	10617423	14
+North Carolina	10488084	13
+Michigan	9986857	14
+New Jersey	8882190	12
+Virginia	8535519	11
+Washington	7614893	10
+Arizona	7278717	9
+Massachusetts	6892503	9
+Tennessee	6829174	9
+Indiana	6732219	9
+Missouri	6137428	8
+Maryland	6045680	8
+Wisconsin	5822434	8
+Colorado	5758736	7
+Minnesota	5639632	8
+South Carolina	5148714	7
+Alabama	4903185	7
+Louisiana	4648794	6
+Kentucky	4467673	6
+Oregon	4217737	5
+Oklahoma	3956971	5
+Connecticut	3565287	5
+Utah	3205958	4
+Puerto Rico	3193694	0
+Iowa	3155070	4
+Nevada	3080156	4
+Arkansas	3017804	4
+Mississippi	2976149	4
+Kansas	2913314	4
+New Mexico	2096829	3
+Nebraska	1934408	3
+West Virginia	1792147	3
+Idaho	1787065	2
+Hawaii	1415872	2
+New Hampshire	1359711	2
+Maine	1344212	2
+Montana	1068778	1
+Rhode Island	1059361	2
+Delaware	973764	1
+South Dakota	884659	1
+North Dakota	762062	1
+Alaska	731545	1
+District of Columbia	705749	0
+Vermont	623989	1
+Wyoming	578759	1
