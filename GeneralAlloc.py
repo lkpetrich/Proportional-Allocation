@@ -42,4 +42,4 @@ for Method in Methods:
 		d[indx[r[0]]].append(r[2])
 
 for ln in d:
-	print '\t'.join([str(s) for s in ln])
+	print('\t'.join([str(s) for s in ln]))

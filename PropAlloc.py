@@ -186,20 +186,20 @@ def LargestRemainderImperiali(Votes, TotalSeats):
 if __name__ == "__main__":
 	
 	# Example from a Wikipedia article
-	print "D'Hondt"
+	print("D'Hondt")
 	VotesDH = (('A',100), ('B',80), ('C',30), ('D',20))
-	print "Target: A:4, B;3, C:1, D:0"
+	print("Target: A:4, B;3, C:1, D:0")
 	res = DHondt(AddInitial(VotesDH), 8)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
 	# Example from a Wikipedia article
-	print "Sainte-Lague"
+	print("Sainte-Lague")
 	VotesSL = (('A',53), ('B',24), ('C',23))
-	print "Target: A:3, B:2, C:2"
+	print("Target: A:3, B:2, C:2")
 	res = SainteLague(AddInitial(VotesSL), 7)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
@@ -207,42 +207,42 @@ if __name__ == "__main__":
 	VotesHA = (('Yellow',47000), ('White',16000), ('Red',15900), \
 		('Green',12000), ('Blue',6000), ('Pink',3100))
 	
-	print "D'Hondt"
-	print "Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0"
+	print("D'Hondt")
+	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
 	res = DHondt(AddInitial(VotesHA), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Sainte-Lague"
-	print "Target: Yellow:4, White:2, Red:2, Green:1, Blue:1, Pink:0"
+	print("Sainte-Lague")
+	print("Target: Yellow:4, White:2, Red:2, Green:1, Blue:1, Pink:0")
 	res = SainteLague(AddInitial(VotesHA), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Modified Sainte-Lague"
-	print "Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0"
+	print("Modified Sainte-Lague")
+	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
 	res = ModifiedSainteLague(AddInitial(VotesHA), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Imperiali"
+	print("Imperiali")
 	res = Imperiali(AddInitial(VotesHA), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Danish"
+	print("Danish")
 	res = Danish(AddInitial(VotesHA), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Rounded down, then d'Hondt"
+	print("Rounded down, then d'Hondt")
 	res = DHondt(AddRoundedDown(VotesHA, 10), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
@@ -250,23 +250,23 @@ if __name__ == "__main__":
 	VotesLR = (('Yellow',47000), ('White',16000), ('Red',15800), \
 		('Green',12000), ('Blue',6100), ('Pink',3100))
 	
-	print "Highest-Remainder Hare"
-	print "Target: Yellow:5, White:2, Red:1, Green:1, Blue:1, Pink:0"
+	print("Highest-Remainder Hare")
+	print("Target: Yellow:5, White:2, Red:1, Green:1, Blue:1, Pink:0")
 	res = LargestRemainderHare(AddInitial(VotesLR), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	
-	print "Highest-Remainder Droop"
+	print("Highest-Remainder Droop")
 	res = LargestRemainderDroop(AddInitial(VotesLR), 10)
-	print "Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0"
-	for r in res: print r
+	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
+	for r in res: print(r)
 	
 	print
 	
-	print "Highest-Remainder Imperiali"
+	print("Highest-Remainder Imperiali")
 	res = LargestRemainderImperiali(AddInitial(VotesLR), 10)
-	for r in res: print r
+	for r in res: print(r)
 	
 	print
 	

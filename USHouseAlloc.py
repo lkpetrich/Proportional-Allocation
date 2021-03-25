@@ -38,7 +38,7 @@ for Method in Methods:
 	for r in res:
 		d[indx[r[0]]].append(r[2])
 
-print '\t'.join(("State", "Pop", "Actual", "Hunt-Hill", "D'Hondt", "Sainte-Lague", \
-	"Danish", "Mod SL", "Imperiali", "LR Hare", "LR Droop", "LR Imperiali"))
+print('\t'.join(("State", "Pop", "Actual", "Hunt-Hill", "D'Hondt", "Sainte-Lague", \
+	"Danish", "Mod SL", "Imperiali", "LR Hare", "LR Droop", "LR Imperiali")))
 for ln in d:
-	print '\t'.join([str(s) for s in ln])
+	print('\t'.join([str(s) for s in ln]))
