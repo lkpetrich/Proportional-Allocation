@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!python3
 #
 # Allocates seats for the US House of Representatives using different algorithms
 #
@@ -28,10 +28,11 @@ for k,ln in enumerate(d):
 
 Votes = PropAlloc.AddInitial(d,1)
 
-Methods = (PropAlloc.HuntingtonHill, PropAlloc.DHondt, PropAlloc.SainteLague, \
-	PropAlloc.Danish, PropAlloc.ModifiedSainteLague, PropAlloc.Imperiali, \
-	PropAlloc.LargestRemainderHare, PropAlloc.LargestRemainderDroop, \
-	PropAlloc.LargestRemainderImperiali)
+Methods = (PropAlloc.HA_HuntingtonHill, PropAlloc.HA_DHondt, PropAlloc.HA_SainteLague, \
+	PropAlloc.HA_Danish, PropAlloc.HA_ModifiedSainteLague, PropAlloc.HA_Imperiali, \
+	PropAlloc.LR_Hare, PropAlloc.LR_Droop, \
+	PropAlloc.LR_Imperiali, PropAlloc.AD_Jefferson, \
+	PropAlloc.AD_Webster, PropAlloc.AD_Adams)
 
 for Method in Methods:
 	res = Method(Votes,NSeats)
@@ -39,6 +40,7 @@ for Method in Methods:
 		d[indx[r[0]]].append(r[2])
 
 print('\t'.join(("State", "Pop", "Actual", "Hunt-Hill", "D'Hondt", "Sainte-Lague", \
-	"Danish", "Mod SL", "Imperiali", "LR Hare", "LR Droop", "LR Imperiali")))
+	"Danish", "Mod SL", "Imperiali", "LR Hare", "LR Droop", "LR Imperiali", \
+	"AD Jefferson", "AD Webster", "AD Adams")))
 for ln in d:
 	print('\t'.join([str(s) for s in ln]))
