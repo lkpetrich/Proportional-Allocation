@@ -13,6 +13,9 @@ Data for USHouseAlloc.py -- from US Census data and estimates
 - US States 2019 Est.txt -- estimate
 - US States 2019 DC Est.txt -- estimate with Washington DC added
 - US States 2019 DC PR Est.txt -- estimate with DC and Puerto Rico added
+- US States 2020.txt -- census results
+- US States 2020 DC.txt -- census results with Washington DC added
+- US States 2020 DC PR.txt -- census results with DC and Puerto Rico added
 
 Data for GeneralAlloc.py
 - Votes - Absurd Parties.txt
