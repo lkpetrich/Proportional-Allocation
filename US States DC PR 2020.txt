@@ -27,6 +27,7 @@ Kentucky 	4505836	6
 Oregon 	4237256	6
 Oklahoma 	3959353	5
 Connecticut 	3605944	5
+Puerto Rico	3285874	4
 Utah 	3271616	4
 Iowa 	3190369	4
 Nevada 	3104614	4
@@ -46,5 +47,6 @@ Delaware 	989948	1
 South Dakota 	886667	1
 North Dakota 	779094	1
 Alaska 	733391	1
+District of Columbia	689545	1
 Vermont 	643077	1
 Wyoming 	576851	1

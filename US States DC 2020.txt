@@ -46,5 +46,6 @@ Delaware 	989948	1
 South Dakota 	886667	1
 North Dakota 	779094	1
 Alaska 	733391	1
+District of Columbia	689545	1
 Vermont 	643077	1
 Wyoming 	576851	1
