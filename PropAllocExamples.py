@@ -110,6 +110,11 @@ Methods["Ad"] = \
 	lambda v,n: AdjustDivisor(AD_Rounding["Adams"], v, n)
 
 
+def partition(lst, prtlen):
+	nprts = len(lst) // prtlen
+	return [ lst[k*prtlen:(k+1)*prtlen] for k in range(nprts) ]
+
+
 def ShowVotes(Name,Vote):
 	SrcName, MethodStr = Name.split(" - ")
 	MethodList = MethodStr.split(" ")
@@ -123,8 +128,7 @@ def ShowVotes(Name,Vote):
 	
 	print(SrcName, " - ", MethodList)
 	for k, MethodName in enumerate(MethodList):
-		for SO in SeatOutput: SO.append("-")
-	
+		
 		SeatTarget = [VT[k+2] for VT in Vote]
 		for ix, st in enumerate(SeatTarget):
 			SeatOutput[ix].append(st)
@@ -136,6 +140,9 @@ def ShowVotes(Name,Vote):
 			ix = SrcIndex[r[0]]
 			SeatOutput[ix].append(r[2])
 	
-	for SO in SeatOutput: print(SO)
+	for SO in SeatOutput: print(partition(SO,2))
 
+print("Header: name, abbreviations of methods")
+print("Body: lines of [name, votes]")
+print("    then for each method, [target, calculated here]")
 for nm,vt in Votes.items(): ShowVotes(nm,vt)
