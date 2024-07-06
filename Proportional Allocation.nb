@@ -10,121 +10,166 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     51370,       1365]
-NotebookOptionsPosition[     44925,       1277]
-NotebookOutlinePosition[     45323,       1293]
-CellTagsIndexPosition[     45280,       1290]
+NotebookDataLength[    119917,       3004]
+NotebookOptionsPosition[    115340,       2928]
+NotebookOutlinePosition[    115733,       2944]
+CellTagsIndexPosition[    115690,       2941]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
-Cell["\<\
-Proportional Allocation
-
-These are for proportional representation from votes,
-given some total number of seats
-
-Implements highest averages, largest remainders, and adjusted divisors.
-
-In these methods, Votes is a list of {party, # votes, initial # seats}
-
-Initializers for these allocation functions:
-
-AddInitial[Votes, Initial=0] takes a list of {party, # votes}
-and adds Initial (default 0) seats to each
-
-AddRoundedDown[Votes, Seats] takes a list of (party, # votes)
-and adds the rounded-down proportional number of seats to each
-
----
-
-HighestAverages[Divisor function, Votes, Seats]
-Divisor function, votes, number of seats to fill
-The divisor function takes the number of seats that a party currently has and \
-returns a value. This value ought to tend to some multiple of the number of \
-seats as it gets large.
-
-NamedHighestAverages[Name, Votes, Seats]
-Name:
-\[OpenCurlyDoubleQuote]D\[CloseCurlyQuote]Hondt\[CloseCurlyDoubleQuote] \
-(s+1), \[OpenCurlyDoubleQuote]Sainte-Lague\[CloseCurlyDoubleQuote] (2s+1), \
-\[OpenCurlyDoubleQuote]Modified Sainte-Lague\[CloseCurlyDoubleQuote] (1.4 if \
-s = 0 else Sainte-Lague), \[OpenCurlyDoubleQuote]Danish\
-\[CloseCurlyDoubleQuote] (3s+1), \[OpenCurlyDoubleQuote]Imperiali\
-\[CloseCurlyDoubleQuote] (s+2), \[OpenCurlyDoubleQuote]Huntington-Hill\
-\[CloseCurlyDoubleQuote] (sqrt(s*(s+1))
-In HANames for s seats
-
----
-
-LargestRemainder[Quota Adjust, Votes, Seats]
-Quota-adjustment value, votes, number of seats to fill
-
-NamedLargestRemainder[Name, Votes, Seats]
-Name:
-\[OpenCurlyDoubleQuote]Hare\[CloseCurlyDoubleQuote] (0), \
-\[OpenCurlyDoubleQuote]Droop\[CloseCurlyDoubleQuote] (1), \
-\[OpenCurlyDoubleQuote]Imperiali\[CloseCurlyDoubleQuote] (2)
-In LRNames
-
----
-
-AdjustedDivisors[Round Direction, Votes, Seats]
-Direction of roundoff, votes, number of seats to fill
-
-NamedAdjustedDivisors[Name, Votes, Seats]
-Name:
-\[OpenCurlyDoubleQuote]Jefferson\[CloseCurlyDoubleQuote] (-1: downward),\
-\[CloseCurlyDoubleQuote]Webster\[CloseCurlyDoubleQuote] (0: nearest),\
-\[CloseCurlyDoubleQuote]Adams\[CloseCurlyDoubleQuote] (1: upward)
-in NANames
-
----
-
-http://en.wikipedia.org/wiki/Highest_averages_method - Highest-averages \
-method
-http://en.wikipedia.org/wiki/D%27Hondt_method - D\[CloseCurlyQuote]Hondt method
-http://en.wikipedia.org/wiki/Sainte-Lagu%C3%AB_method - Sainte-Lague method
-http://en.wikipedia.org/wiki/Huntington-Hill_method - Huntington-Hill method
-http://en.wikipedia.org/wiki/Largest_remainder_method - Largest-remainder \
-method
+Cell[TextData[{
+ StyleBox["Proportional Allocation",
+  FontWeight->"Bold"],
+ "\n\nFor doing proportional representation, given some political parties and \
+how many votes each one received. This also works for assigning legislators \
+by population to subterritories of some territory.\n\nThis notebook \
+implements  highest averages, largest remainders, and adjusted divisors.\n\n\
+The methods take a list of (party, # votes, anything else ignored)\nThey \
+return list of (name, # votes, # seats, # direction)\nFor # seats outside of \
+the minimum and maximum values, that number is pegged to within that range, \
+and the direction of departure is:\nLess than the minimum: -1\nIn range: 0\n\
+Greater than the maximum: 1\n\nAll results are sorted by {- # seats, - # \
+votes, name}\ndecreasing by seats, decreasing by votes, increasing by name\n\n\
+",
+ StyleBox["Highest Averages",
+  FontWeight->"Bold"],
+ "\n\nAddInitial[Votes, Initial=0] \nArgs:\nVotes: list of (party, # votes)\n\
+Initial: initial number of seats (default: 0)\nReturns:\nList of {party, # \
+votes, initial number of seats}\n\nAddRoundedDown[Votes, NumSeats, \
+\[OpenCurlyDoubleQuote]MinSeats\[CloseCurlyDoubleQuote]->0, \
+\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote]->Null]\nArgs:\nVotes: \
+list of (party, # votes)\nNumSeats: number of seats\n\
+\[OpenCurlyDoubleQuote]MinSeats\[CloseCurlyDoubleQuote]: minimum number of \
+seats per party (optional, default 0)\n\[OpenCurlyDoubleQuote]MaxSeats\
+\[CloseCurlyDoubleQuote] maximum number of seats per party (optional, default \
+Null: no maximum)\nReturns:\nList of {party, # votes, number of seats, \
+direction of seat number}\n\nHighestAverages[DivisorFunc, Votes, NumSeats, \
+\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote]->Null]\nArgs:\n\
+DivisorFunc: function that takes number of seats and returns divisor value\n\
+Votes: list of (party, # votes, initial # seats)\nNumSeats: number of seats\n\
+\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote] maximum number of \
+seats per party (optional, default Null: no maximum)\nReturns:\nList of \
+{party, # votes, number of seats, direction of seat number}\n\n",
+ StyleBox["Highest-Averages Divisor Functions",
+  FontWeight->"Bold"],
+ "\n\nHADivisors[which one as string]  for number of seats s\nAdams = s\n\
+Danish = 3s + 1\nSainteLague = 2s+1\nModifiedSainteLague = if s == 0 then 1.4 \
+else SainteLague\nHuntingtonHill = sqrt(s*(s+1))\nDean = 1/(1/s + 1/(s+1)) = \
+(2s+1)/((s*(s+1))\nSquareMean = sqrt((s^2 + (s+1)^2)/2)\nDHondt = s + 1\n\
+Imperiali = s + 2\n\n",
+ StyleBox["Largest Remainders",
+  FontWeight->"Bold"],
+ "\n\nLargestRemainders[QuotaAdjust, Votes, NumSeats, \
+\[OpenCurlyDoubleQuote]MinSeats\[CloseCurlyDoubleQuote]->0, \
+\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote]->Null]\nArgs:\n\
+QuotaAdjust: adjustment to the number of seats\nVotes: list of (party, # \
+votes, initial # seats)\nNumSeats: number of seats\n\
+\[OpenCurlyDoubleQuote]MinSeats\[CloseCurlyDoubleQuote]: minimum number of \
+seats per party (optional, default 0)\n\[OpenCurlyDoubleQuote]MaxSeats\
+\[CloseCurlyDoubleQuote] maximum number of seats per party (optional, default \
+Null: no maximum)\nReturns:\nList of {party, # votes, number of seats, \
+direction of seat number}\n\n",
+ StyleBox["Largest Remainder Quota Adjustment",
+  FontWeight->"Bold"],
+ "\n\nLRQuotaAdjust[which one as string]\nHare: 0\nDroop: 1\nImperiali: 2\n\n",
+ StyleBox["Adjusted Divisor",
+  FontWeight->"Bold"],
+ "\n\nAdjustDivisor[RoundDir, Votes, NumSeats, \
+\[OpenCurlyDoubleQuote]MinSeats\[CloseCurlyDoubleQuote]->0, \
+\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote]->Null]\nArgs:\n\
+RoundDir: direction of rounding\nVotes: list of (party, # votes, initial # \
+seats)\nNumSeats: number of seats\n\[OpenCurlyDoubleQuote]MinSeats\
+\[CloseCurlyDoubleQuote]: minimum number of seats per party (optional, \
+default 0)\n\[OpenCurlyDoubleQuote]MaxSeats\[CloseCurlyDoubleQuote] maximum \
+number of seats per party (optional, default Null: no maximum)\nReturns:\n\
+List of {party, # votes, number of seats, direction of seat number}\n\n",
+ StyleBox["Adjusted Divisor Rounding Direction",
+  FontWeight->"Bold"],
+ "\n\nADRounding[Which one as string]\nJefferson: -1 (downward)\nWebster: 0 \
+(in-between)\nAdams: 1 (upward)\n\n",
+ StyleBox["Sources",
+  FontWeight->"Bold"],
+ "\n\nHighest-averages method\n\
+http://en.wikipedia.org/wiki/Highest_averages_method\n\
+https://electowiki.org/wiki/Highest_averages_method\n\nJefferson-D\
+\[CloseCurlyQuote]Hondt method\nhttp://en.wikipedia.org/wiki/D%27Hondt_method\
+\nhttps://electowiki.org/wiki/D%27Hondt_method\n\nWebster-Sainte-Lagu\
+\[EDoubleDot] method\nhttp://en.wikipedia.org/wiki/Sainte-Lagu%C3%AB_method\n\
+\nHuntington-Hill method\nhttp://en.wikipedia.org/wiki/Huntington-Hill_method\
+\n\nImperiali quota - Wikipedia\n\
+https://en.wikipedia.org/wiki/Imperiali_quota\n\nLargest-remainder method\n\
+http://en.wikipedia.org/wiki/Largest_remainders_method\n\
+https://electowiki.org/wiki/Largest_remainder_method\n\nHamilton\
+\[CloseCurlyQuote]s method - electowiki\n\
+https://electowiki.org/wiki/Hamilton_method\n\nAdjusted-divisor method\n9.2: \
+Apportionment - Jefferson\[CloseCurlyQuote]s, Adams\[CloseCurlyQuote]s, and \
+Webster\[CloseCurlyQuote]s Methods - Mathematics LibreTexts \
 https://math.libretexts.org/Bookshelves/Applied_Mathematics/Book%3A_College_\
 Mathematics_for_Everyday_Life_(Inigo_et_al)/09%3A__Apportionment/9.02%3A_\
-Apportionment_-_Jeffersons_Adamss_and_Websters_Methods
-https://www.pnas.org/content/77/1/1 - The Webster method of apportionment\
-\>", "Text",ExpressionUUID->"7cc5ef2e-1b50-4136-b628-85f62c2498fb"],
+Apportionment_-_Jeffersons_Adamss_and_Websters_Methods\nThe Webster method of \
+apportionment\nhttps://www.pnas.org/content/77/1/1\n\nDegressive \
+proportionality\nhttp://en.wikipedia.org/wiki/Degressive_proportionality\n\n\
+Note: the Israeli Knesset allocation is not exactly D\[CloseCurlyQuote]Hondt,\
+\nfor reasons stated in the Huntington-Hill article"
+}], "Text",ExpressionUUID->"7cc5ef2e-1b50-4136-b628-85f62c2498fb"],
 
 Cell[CellGroupData[{
 
 Cell["Algorithms", "Section",ExpressionUUID->"27c684ec-503b-4d7c-85df-90cd522b04c4"],
 
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+   RowBox[{"Final", " ", 
+    RowBox[{"sort", ":", " ", 
+     RowBox[{"decreasing", " ", "number", " ", "of", " ", "seats"}]}]}], ",", 
+   " ", 
+   RowBox[{"decreasing", " ", "number", " ", "of", " ", "votes"}], ",", " ", 
+   RowBox[{"increasing", " ", "name"}]}], " ", "*)"}]], "Input",
+ CellLabel->"In[2]:=",ExpressionUUID->"2d43ab61-db33-419c-bd1d-ba1f49385b7e"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SortKeyFinal", " ", "=", " ", 
+   RowBox[{"a", " ", "|->", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"-", 
+       RowBox[{"a", "[", 
+        RowBox[{"[", "3", "]"}], "]"}]}], ",", 
+      RowBox[{"-", 
+       RowBox[{"a", "[", 
+        RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+      RowBox[{"a", "[", 
+       RowBox[{"[", "1", "]"}], "]"}]}], "}"}]}]}], ";"}]], "Input",
+ CellLabel->"In[3]:=",ExpressionUUID->"7e0d560f-ae79-438e-a95d-a27682c25102"],
+
 Cell[CellGroupData[{
 
-Cell["Initializing the votes", "Subsection",ExpressionUUID->"a17458bb-177d-4c1c-90fe-5c26812c364f"],
+Cell["Initializing the votes for highest averages", "Subsection",ExpressionUUID->"a17458bb-177d-4c1c-90fe-5c26812c364f"],
 
 Cell[BoxData[
  RowBox[{"(*", " ", 
   RowBox[{"Add", " ", "constant", " ", "initial", " ", 
    RowBox[{"allocation", ":", "\[IndentingNewLine]", 
     RowBox[{"Default", " ", "is", " ", "zero"}]}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[522]:=",ExpressionUUID->"804c55aa-f7c1-45af-b1db-7db2b6efe1d8"],
+ CellLabel->"In[4]:=",ExpressionUUID->"804c55aa-f7c1-45af-b1db-7db2b6efe1d8"],
 
 Cell[BoxData[
  RowBox[{
   RowBox[{"AddInitial", "[", 
-   RowBox[{"votes_", ",", " ", 
-    RowBox[{"initial_", ":", "0"}]}], "]"}], " ", ":=", " ", 
+   RowBox[{"Votes_", ",", " ", 
+    RowBox[{"Initial_", ":", "0"}]}], "]"}], " ", ":=", " ", 
   RowBox[{
-   RowBox[{
-    RowBox[{"Append", "[", 
-     RowBox[{
-      RowBox[{"#", "[", 
-       RowBox[{"[", 
-        RowBox[{";;", "2"}], "]"}], "]"}], ",", "initial"}], "]"}], "&"}], 
-   " ", "/@", " ", "votes"}]}]], "Input",
- CellLabel->
-  "In[523]:=",ExpressionUUID->"05e33064-1998-4545-ac0c-08fc5fb3fd30"],
+   RowBox[{"(", 
+    RowBox[{"vs", " ", "|->", " ", 
+     RowBox[{"Append", "[", 
+      RowBox[{
+       RowBox[{"Take", "[", 
+        RowBox[{"vs", ",", "2"}], "]"}], ",", "Initial"}], "]"}]}], ")"}], 
+   " ", "/@", " ", "Votes"}]}]], "Input",
+ CellLabel->"In[5]:=",ExpressionUUID->"05e33064-1998-4545-ac0c-08fc5fb3fd30"],
 
 Cell[BoxData[
  RowBox[{"(*", " ", 
@@ -134,7 +179,7 @@ Cell[BoxData[
     RowBox[{"down", " ", "number", " ", "of", " ", 
      RowBox[{"votes", ":", 
       RowBox[{
-       RowBox[{"(", "total", ")"}], "/", 
+       RowBox[{"(", "votes", ")"}], "/", 
        RowBox[{"(", 
         RowBox[{"Hare", " ", "quota"}], ")"}]}]}]}]}], ",", 
    RowBox[{
@@ -146,41 +191,204 @@ Cell[BoxData[
      RowBox[{"(", 
       RowBox[{"number", " ", "of", " ", "seats"}], ")"}]}]}]}], " ", 
   "*)"}]], "Input",
- CellLabel->
-  "In[524]:=",ExpressionUUID->"3865bbe4-51dd-4867-8be3-413f78658f51"],
+ CellLabel->"In[6]:=",ExpressionUUID->"3865bbe4-51dd-4867-8be3-413f78658f51"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Options", "[", "AddRoundedDown", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"\"\<MinSeats\>\"", "->", "0"}], ",", 
+     RowBox[{"\"\<MaxSeats\>\"", "->", "Null"}]}], "}"}]}], ";"}]], "Input",
+ CellLabel->"In[7]:=",ExpressionUUID->"06551c3c-3c72-46ca-8238-cc114e72b287"],
 
 Cell[BoxData[
  RowBox[{
   RowBox[{"AddRoundedDown", "[", 
-   RowBox[{"votes_", ",", " ", "seats_"}], "]"}], " ", ":=", " ", 
+   RowBox[{"Votes_", ",", "NumSeats_", ",", 
+    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], " ", ":=", " ", 
   RowBox[{"Module", "[", 
    RowBox[{
-    RowBox[{"{", "quota", "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"{", 
+     RowBox[{
+     "MinSeats", ",", "MaxSeats", ",", "IsMax", ",", "VoteSeats", ",", " ", 
+      "PrevNumIRMems", ",", "SeatSum", ",", "QuotaSum", ",", "Quota", ",", 
+      "QuotaRcp", ",", "stnew", ",", "drnew", ",", "NumIRMems"}], "}"}], ",", 
+    "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{"quota", " ", "=", 
+     RowBox[{"MinSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MinSeats\>\"", "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"MaxSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MaxSeats\>\"", "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Maximum", " ", "number", " ", "of", " ", "seats", " ", 
+       RowBox[{"present", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"IsMax", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "=!=", " ", "Null"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Name", ",", " ", 
+       RowBox[{"number", " ", "of", " ", "votes"}], ",", " ", 
+       RowBox[{"number", " ", "of", " ", "seats"}], ",", " ", 
+       RowBox[{"direction", "\[IndentingNewLine]", 
+        RowBox[{"Direction", ":", " ", 
+         RowBox[{"-", "1"}], ":", " ", 
+         RowBox[{"too", " ", "small"}]}]}], ",", " ", 
+       RowBox[{"0", ":", " ", 
+        RowBox[{"in", " ", "range"}]}], ",", " ", 
+       RowBox[{"1", ":", " ", 
+        RowBox[{"too", " ", "large"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
       RowBox[{
-       RowBox[{"N", "[", 
-        RowBox[{"Total", "[", 
+       RowBox[{"(", 
+        RowBox[{"vs", " ", "|->", " ", 
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "2"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0"}], "}"}]}], "]"}]}], ")"}], " ", "/@", " ", 
+       "Votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"PrevNumIRMems", " ", "=", " ", 
+      RowBox[{"Length", "[", "VoteSeats", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"While", "[", 
+      RowBox[{"True", ",", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{
+         RowBox[{"Find", " ", "the", " ", "quota", " ", "to", " ", 
+          RowBox[{"use", ".", " ", "Count"}], " ", "only", " ", "the", " ", 
+          "in"}], "-", 
+         RowBox[{"range", " ", "entries"}]}], " ", "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"SeatSum", " ", "=", " ", "NumSeats"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"QuotaSum", " ", "=", " ", "0"}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}], "==", "0"}], ",", 
+            RowBox[{"QuotaSum", " ", "+=", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+            RowBox[{"SeatSum", "-=", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "3", "]"}], "]"}]}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
          RowBox[{
           RowBox[{
-           RowBox[{"#", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], "&"}], " ", "/@", " ", "votes"}], 
-         "]"}], "]"}], "/", "seats"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"Append", "[", 
-        RowBox[{
-         RowBox[{"#", "[", 
-          RowBox[{"[", 
-           RowBox[{";;", "2"}], "]"}], "]"}], ",", 
-         RowBox[{"Floor", "[", 
+           RowBox[{"If", " ", "no", " ", "in"}], "-", 
+           RowBox[{"range", " ", "ones"}]}], ",", 
+          RowBox[{"then", " ", "use", " ", "this", " ", 
+           RowBox[{"result", ":"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"SeatSum", " ", "<=", " ", "0"}], ",", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"Find", " ", "the", " ", "rounded"}], "-", 
           RowBox[{
-           RowBox[{"#", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], "/", "quota"}], "]"}]}], "]"}], 
-       "&"}], " ", "/@", " ", "votes"}]}]}], "\[IndentingNewLine]", 
-   "]"}]}]], "Input",
- CellLabel->
-  "In[525]:=",ExpressionUUID->"417ab718-7c36-4f97-9073-94010a66f124"]
+          "down", " ", "number", " ", "of", " ", "seats", " ", "for", " ", 
+           "every", " ", "in"}], "-", 
+          RowBox[{"range", " ", "one"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Quota", " ", "=", " ", 
+         RowBox[{"QuotaSum", "/", 
+          RowBox[{"N", "[", "SeatSum", "]"}]}]}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"QuotaRcp", " ", "=", " ", 
+         RowBox[{"1", "/", "Quota"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+         "Have", " ", "to", " ", "do", " ", "it", " ", "this", " ", "way", 
+          " ", "because", " ", "Mma", " ", 
+          RowBox[{"isn", "'"}], "t", " ", "as", " ", "good", " ", "with", " ",
+           "updating", " ", "arrays", " ", "than", " ", "Python"}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"If", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"vs", "[", 
+               RowBox[{"[", "4", "]"}], "]"}], "!=", "0"}], ",", 
+             "\[IndentingNewLine]", "vs", ",", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"stnew", " ", "=", " ", 
+               RowBox[{"Floor", "[", 
+                RowBox[{"QuotaRcp", "*", 
+                 RowBox[{"vs", "[", 
+                  RowBox[{"[", "2", "]"}], "]"}]}], "]"}]}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"drnew", " ", "=", " ", "0"}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"Which", "[", 
+               RowBox[{
+                RowBox[{"stnew", " ", "<", " ", "MinSeats"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"stnew", " ", "=", " ", "MinSeats"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"drnew", " ", "=", " ", 
+                  RowBox[{"-", "1"}]}]}], ",", "\[IndentingNewLine]", 
+                RowBox[{"IsMax", " ", "&&", " ", 
+                 RowBox[{"stnew", " ", ">", " ", "MaxSeats"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"stnew", " ", "=", " ", "MaxSeats"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"drnew", " ", "=", " ", "1"}]}]}], 
+               "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+              RowBox[{"Join", "[", 
+               RowBox[{
+                RowBox[{"Take", "[", 
+                 RowBox[{"vs", ",", "2"}], "]"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"stnew", ",", "drnew"}], "}"}]}], "]"}]}]}], 
+            "\[IndentingNewLine]", "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"How", " ", "many", " ", "in"}], "-", 
+          RowBox[{"range", " ", 
+           RowBox[{"members", "?"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"NumIRMems", " ", "=", " ", "0"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}], "!=", "0"}], ",", 
+            RowBox[{"NumIRMems", " ", "+=", " ", "1"}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"NumIRMems", " ", "==", " ", "0"}], ",", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"NumIRMems", " ", "==", " ", "PrevNumIRMems"}], ",", " ", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"PrevNumIRMems", " ", "=", " ", "NumIRMems"}]}]}], 
+      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+     "VoteSeats"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
+ CellLabel->"In[8]:=",ExpressionUUID->"417ab718-7c36-4f97-9073-94010a66f124"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -189,643 +397,1089 @@ Cell["Highest Averages", "Subsection",ExpressionUUID->"04bbef74-0346-48ec-ae16-f
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"HighestAverages", "[", 
-   RowBox[{"dvsrfunc_", ",", "votes_", ",", "seats_"}], "]"}], " ", ":=", " ", 
-  RowBox[{"Module", "[", 
-   RowBox[{
-    RowBox[{"{", 
-     RowBox[{"vlist", ",", "rmseats"}], "}"}], ",", "\[IndentingNewLine]", 
-    RowBox[{
-     RowBox[{"vlist", " ", "=", " ", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"Append", "[", 
-         RowBox[{
-          RowBox[{"#", "[", 
-           RowBox[{"[", 
-            RowBox[{";;", "3"}], "]"}], "]"}], ",", 
-          RowBox[{"N", "[", 
-           RowBox[{
-            RowBox[{"#", "[", 
-             RowBox[{"[", "2", "]"}], "]"}], "/", 
-            RowBox[{"dvsrfunc", "[", 
-             RowBox[{"#", "[", 
-              RowBox[{"[", "3", "]"}], "]"}], "]"}]}], "]"}]}], "]"}], "&"}], 
-       " ", "/@", " ", "votes"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"rmseats", " ", "=", " ", 
-      RowBox[{"seats", " ", "-", " ", 
-       RowBox[{"Total", "[", 
-        RowBox[{
-         RowBox[{
-          RowBox[{"#", "[", 
-           RowBox[{"[", "3", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
-        "]"}]}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"While", "[", 
-      RowBox[{
-       RowBox[{"rmseats", " ", ">", " ", "0"}], ",", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"vlist", " ", "=", " ", 
-         RowBox[{"SortBy", "[", 
-          RowBox[{"vlist", ",", 
-           RowBox[{
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"-", 
-               RowBox[{"#", "[", 
-                RowBox[{"[", "4", "]"}], "]"}]}], ",", 
-              RowBox[{"-", 
-               RowBox[{"#", "[", 
-                RowBox[{"[", "2", "]"}], "]"}]}], ",", 
-              RowBox[{"#", "[", 
-               RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";",
-         "\[IndentingNewLine]", 
-        RowBox[{
-         RowBox[{"vlist", "[", 
-          RowBox[{"[", 
-           RowBox[{"1", ",", "3"}], "]"}], "]"}], "++"}], ";", 
-        "\[IndentingNewLine]", 
-        RowBox[{
-         RowBox[{"vlist", "[", 
-          RowBox[{"[", 
-           RowBox[{"1", ",", "4"}], "]"}], "]"}], " ", "=", " ", 
-         RowBox[{"N", "[", 
-          RowBox[{
-           RowBox[{"vlist", "[", 
-            RowBox[{"[", 
-             RowBox[{"1", ",", "2"}], "]"}], "]"}], "/", 
-           RowBox[{"dvsrfunc", "[", 
-            RowBox[{"vlist", "[", 
-             RowBox[{"[", 
-              RowBox[{"1", ",", "3"}], "]"}], "]"}], "]"}]}], "]"}]}], ";", 
-        "\[IndentingNewLine]", 
-        RowBox[{"rmseats", "--"}]}]}], "\[IndentingNewLine]", "]"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"vlist", " ", "=", " ", 
-      RowBox[{"SortBy", "[", 
-       RowBox[{"vlist", ",", 
-        RowBox[{
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "3", "]"}], "]"}]}], ",", 
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
-           RowBox[{"#", "[", 
-            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"#", "[", 
-        RowBox[{"[", 
-         RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
-      "vlist"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
- CellLabel->
-  "In[526]:=",ExpressionUUID->"abba2cc9-a5ba-4ebc-9a87-fc5562fce551"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"DifferentInitial", "[", 
-   RowBox[{"dvsrfunc_", ",", "initial_", ",", "k_"}], "]"}], " ", ":=", " ", 
-  RowBox[{"If", "[", 
-   RowBox[{
-    RowBox[{"k", "\[Equal]", "0"}], ",", "initial", ",", 
-    RowBox[{"dvsrfunc", "[", "k", "]"}]}], "]"}]}]], "Input",
- CellLabel->
-  "In[527]:=",ExpressionUUID->"c585301d-6ecc-4471-aece-9dffdf73608a"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"LinearDivisor", "[", 
-   RowBox[{"k_", ",", "d1_", ",", 
-    RowBox[{"d0_", ":", "1"}]}], "]"}], " ", ":=", " ", 
-  RowBox[{"d0", " ", "+", " ", 
-   RowBox[{"d1", "*", "k"}]}]}]], "Input",
- CellLabel->
-  "In[528]:=",ExpressionUUID->"a9318cca-81ed-4ff1-927a-2d4956269e33"],
-
-Cell[BoxData[
- RowBox[{
   RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<D'Hondt\>\"", "]"}], "[", "k_", "]"}], " ", 
-  ":=", " ", 
-  RowBox[{"LinearDivisor", "[", 
-   RowBox[{"k", ",", "1", ",", "1"}], "]"}]}]], "Input",
- CellLabel->
-  "In[529]:=",ExpressionUUID->"4ea13b77-673b-4f6b-b2fd-70ae2dea9b7a"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<Sainte-Lague\>\"", "]"}], "[", "k_", "]"}], 
-  " ", ":=", " ", 
-  RowBox[{"LinearDivisor", "[", 
-   RowBox[{"k", ",", "2", ",", "1"}], "]"}]}]], "Input",
- CellLabel->
-  "In[530]:=",ExpressionUUID->"06a0a570-94c6-4887-91cc-778a2c76684b"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<Modified Sainte-Lague\>\"", "]"}], "[", 
-   "k_", "]"}], " ", ":=", " ", 
-  RowBox[{"DifferentInitial", "[", 
-   RowBox[{
-    RowBox[{"HADivisor", "[", "\"\<Sainte-Lague\>\"", "]"}], ",", "1.4", ",", 
-    "k"}], "]"}]}]], "Input",
- CellLabel->
-  "In[531]:=",ExpressionUUID->"08f393f5-4cb2-4831-8b92-6f9479915226"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<Danish\>\"", "]"}], "[", "k_", "]"}], " ", ":=",
-   " ", 
-  RowBox[{"LinearDivisor", "[", 
-   RowBox[{"k", ",", "3", ",", "1"}], "]"}]}]], "Input",
- CellLabel->
-  "In[532]:=",ExpressionUUID->"d3f76964-54e9-4d4b-8712-6c03aaea43ba"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<Imperiali\>\"", "]"}], "[", "k_", "]"}], 
-  " ", ":=", " ", 
-  RowBox[{"LinearDivisor", "[", 
-   RowBox[{"k", ",", "1", ",", "2"}], "]"}]}]], "Input",
- CellLabel->
-  "In[533]:=",ExpressionUUID->"813d10bb-df5a-49d3-a55e-b64a10afd6f8"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"HADivisor", "[", "\"\<Huntington-Hill\>\"", "]"}], "[", "k_", 
-   "]"}], " ", ":=", " ", 
-  RowBox[{"Sqrt", "[", 
-   RowBox[{"k", "*", 
-    RowBox[{"(", 
-     RowBox[{"k", "+", "1"}], ")"}]}], "]"}]}]], "Input",
- CellLabel->
-  "In[534]:=",ExpressionUUID->"217ac0ac-9436-4592-8e89-ab0339b7a536"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"NamedHighestAverages", "[", 
-   RowBox[{"name_", ",", "votes_", ",", "seats_"}], "]"}], " ", ":=", " ", 
-  RowBox[{"HighestAverages", "[", 
-   RowBox[{
-    RowBox[{"HADivisor", "[", "name", "]"}], ",", "votes", ",", "seats"}], 
-   "]"}]}]], "Input",
- CellLabel->
-  "In[535]:=",ExpressionUUID->"d2f55944-dbd1-4ba6-b96b-79a9614a57bc"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"HANames", " ", "=", " ", 
+   RowBox[{"Options", "[", "HighestAverages", "]"}], " ", "=", " ", 
    RowBox[{"{", 
-    RowBox[{
-    "\"\<D'Hondt\>\"", ",", "\"\<Sainte-Lague\>\"", ",", 
-     "\"\<Modified Sainte-Lague\>\"", ",", "\"\<Danish\>\"", ",", 
-     "\"\<Imperiali\>\"", ",", "\"\<Huntington-Hill\>\""}], "}"}]}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[536]:=",ExpressionUUID->"c7fac342-50cd-4140-b6f0-74969f6838b7"]
-}, Closed]],
-
-Cell[CellGroupData[{
-
-Cell["Largest Remainder", "Subsection",ExpressionUUID->"3ba82c18-195f-4dbb-b706-bbe857481ad5"],
+    RowBox[{"\"\<MaxSeats\>\"", "->", "Null"}], "}"}]}], ";"}]], "Input",
+ CellLabel->"In[9]:=",ExpressionUUID->"969128f3-a1db-4b8d-b70e-916f6f1842f5"],
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"LargestRemainder", "[", 
-   RowBox[{"quotaadjust_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], 
-  " ", ":=", " ", 
+  RowBox[{"HighestAverages", "[", 
+   RowBox[{
+   "DivisorFunc_", ",", " ", "Votes_", ",", " ", "NumSeats_", ",", " ", 
+    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], " ", ":=", " ", 
   RowBox[{"Module", "[", 
    RowBox[{
     RowBox[{"{", 
      RowBox[{
-     "vlist", ",", "totvote", ",", "quota", ",", "sts", ",", "rmdr", ",", 
-      "vt", ",", " ", "rmseats", ",", "k"}], "}"}], ",", 
-    "\[IndentingNewLine]", 
+     "MaxSeats", ",", " ", "IsMax", ",", " ", "VoteSeats", ",", "SortKeyHA", 
+      ",", " ", "RemainingSeats", ",", "SeatAvail", ",", "seats", ",", "dir", 
+      ",", "quot"}], "}"}], ",", "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{"vlist", " ", "=", " ", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"#", "[", 
-         RowBox[{"[", 
-          RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
-       "votes"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"totvote", " ", "=", " ", 
-      RowBox[{"Total", "[", 
-       RowBox[{
-        RowBox[{
-         RowBox[{"#", "[", 
-          RowBox[{"[", "2", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
-       "]"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"quota", " ", "=", " ", 
-      RowBox[{"totvote", "/", 
-       RowBox[{"N", "[", 
-        RowBox[{"seats", " ", "+", " ", "quotaadjust"}], "]"}]}]}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", " ", 
-      RowBox[{"Find", " ", "the", " ", "remainders"}], " ", "*)"}], 
+     RowBox[{"MaxSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MaxSeats\>\"", "]"}]}], ";", 
      "\[IndentingNewLine]", 
-     RowBox[{"vlist", " ", "=", " ", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Maximum", " ", "number", " ", "of", " ", "seats", " ", 
+       RowBox[{"present", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"IsMax", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "=!=", " ", "Null"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Name", ",", " ", 
+       RowBox[{"number", " ", "of", " ", "votes"}], ",", " ", 
+       RowBox[{"number", " ", "of", " ", "seats"}], ",", " ", "direction", 
+       ",", " ", 
+       RowBox[{"quota", "\[IndentingNewLine]", 
+        RowBox[{"Direction", ":", " ", 
+         RowBox[{"-", "1"}], ":", " ", 
+         RowBox[{"too", " ", "small"}]}]}], ",", " ", 
+       RowBox[{"0", ":", " ", 
+        RowBox[{"in", " ", "range"}]}], ",", " ", 
+       RowBox[{"1", ":", " ", 
+        RowBox[{"too", " ", "large"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"vs", " ", "|->", " ", 
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "3"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0"}], "}"}]}], "]"}]}], ")"}], " ", "/@", " ", 
+       "Votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+       RowBox[{"Sort", " ", 
+        RowBox[{"order", ":", " ", 
+         RowBox[{"average", " ", "vote"}]}]}], ",", " ", 
+       RowBox[{"total", " ", "vote", " ", 
+        RowBox[{"(", 
+         RowBox[{"highest", " ", "to", " ", "lowest"}], ")"}]}], ",", " ", 
+       RowBox[{"name", " ", 
+        RowBox[{"(", 
+         RowBox[{"lowest", " ", "to", " ", "highest"}], ")"}]}]}], " ", 
+      "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"SortKeyHA", " ", "=", " ", 
+      RowBox[{"(", 
+       RowBox[{"a", " ", "|->", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"-", 
+           RowBox[{"a", "[", 
+            RowBox[{"[", "5", "]"}], "]"}]}], ",", 
+          RowBox[{"-", 
+           RowBox[{"a", "[", 
+            RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+          RowBox[{"a", "[", 
+           RowBox[{"[", "1", "]"}], "]"}]}], "}"}]}], ")"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "Find", " ", "the", " ", "remaining", " ", "seats", " ", "and", " ", 
+       "the", " ", "initial", " ", "averages", " ", "for", " ", "not", " ", 
+       "over", " ", "the", " ", 
+       RowBox[{"limit", ":"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"RemainingSeats", " ", "=", " ", "NumSeats"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
       RowBox[{"Table", "[", "\[IndentingNewLine]", 
        RowBox[{
         RowBox[{
-         RowBox[{"sts", " ", "=", " ", 
-          RowBox[{"Floor", "[", 
+         RowBox[{"seats", " ", "=", " ", 
+          RowBox[{"vs", "[", 
+           RowBox[{"[", "3", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"IsMax", " ", "&&", " ", 
+            RowBox[{"seats", " ", ">", " ", "MaxSeats"}]}], ",", 
+           "\[IndentingNewLine]", 
            RowBox[{
-            RowBox[{"vt", "[", 
-             RowBox[{"[", "2", "]"}], "]"}], "/", "quota"}], "]"}]}], ";", 
+            RowBox[{"seats", " ", "=", " ", "MaxSeats"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"dir", " ", "=", " ", "1"}], ";", " ", 
+            RowBox[{"quot", " ", "=", " ", "0"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"dir", " ", "=", " ", "0"}], ";", " ", 
+            RowBox[{"quot", " ", "=", " ", 
+             RowBox[{
+              RowBox[{"vs", "[", 
+               RowBox[{"[", "2", "]"}], "]"}], "/", 
+              RowBox[{"N", "[", 
+               RowBox[{"DivisorFunc", "[", "seats", "]"}], "]"}]}]}]}]}], 
+          "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", " ", 
+         RowBox[{"RemainingSeats", " ", "-=", " ", "seats"}], ";", 
          "\[IndentingNewLine]", 
-         RowBox[{"sts", " ", "=", " ", 
-          RowBox[{"Max", "[", 
-           RowBox[{"sts", ",", " ", 
-            RowBox[{"vt", "[", 
-             RowBox[{"[", "3", "]"}], "]"}]}], "]"}]}], ";", 
-         "\[IndentingNewLine]", 
-         RowBox[{"rmdr", " ", "=", " ", 
+         RowBox[{"Join", "[", 
           RowBox[{
-           RowBox[{"vt", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], " ", "-", " ", 
-           RowBox[{"quota", "*", "sts"}]}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{
-          RowBox[{"vt", "[", 
-           RowBox[{"[", "3", "]"}], "]"}], " ", "=", " ", "sts"}], ";", 
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "2"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"seats", ",", "dir", ",", "quot"}], "}"}]}], "]"}]}], ",",
          "\[IndentingNewLine]", 
-         RowBox[{"Append", "[", 
-          RowBox[{"vt", ",", "rmdr"}], "]"}]}], ",", "\[IndentingNewLine]", 
         RowBox[{"{", 
-         RowBox[{"vt", ",", "vlist"}], "}"}]}], "]"}]}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"rmseats", " ", "=", " ", 
-      RowBox[{"seats", " ", "-", " ", 
-       RowBox[{"Total", "[", 
-        RowBox[{
-         RowBox[{
-          RowBox[{"#", "[", 
-           RowBox[{"[", "3", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
-        "]"}]}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"rmseats", " ", "<", " ", "0"}], ",", "\[IndentingNewLine]", 
-       RowBox[{"(*", " ", 
-        RowBox[{
-        "Bump", " ", "up", " ", "the", " ", "quota", " ", "and", " ", "try", 
-         " ", "again"}], " ", "*)"}], "\[IndentingNewLine]", 
-       RowBox[{"Return", "[", 
-        RowBox[{"LargestRemainder", "[", 
-         RowBox[{
-          RowBox[{"quotaadjust", "-", "1"}], ",", "votes", ",", "seats"}], 
-         "]"}], "]"}]}], "\[IndentingNewLine]", "]"}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"vlist", " ", "=", " ", 
-      RowBox[{"SortBy", "[", 
-       RowBox[{"vlist", ",", 
-        RowBox[{
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "4", "]"}], "]"}]}], ",", 
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
-           RowBox[{"#", "[", 
-            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", " ", 
-      RowBox[{
-      "Bump", " ", "up", " ", "the", " ", "number", " ", "of", " ", "seats", 
-       " ", "for", " ", "the", " ", "parties", " ", "with", " ", "the", " ", 
-       "highest", " ", "remainders"}], " ", "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"k", " ", "=", " ", "1"}], ";", "\[IndentingNewLine]", 
+         RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
      RowBox[{"While", "[", 
       RowBox[{
-       RowBox[{"rmseats", " ", ">", " ", "0"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"RemainingSeats", " ", ">", " ", "0"}], ",", 
+       "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{
-         RowBox[{"vlist", "[", 
-          RowBox[{"[", 
-           RowBox[{"k", ",", "3"}], "]"}], "]"}], "++"}], ";", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"SortBy", "[", 
+          RowBox[{"VoteSeats", ",", "SortKeyHA"}], "]"}]}], ";", 
         "\[IndentingNewLine]", 
-        RowBox[{"rmseats", "--"}], ";", "\[IndentingNewLine]", 
-        RowBox[{"(*", " ", 
-         RowBox[{
-          RowBox[{"Next", " ", "party"}], ";", " ", 
-          RowBox[{"wrap", " ", "around", " ", "if", " ", "necessary"}]}], " ",
-          "*)"}], "\[IndentingNewLine]", 
-        RowBox[{"k", "++"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"SeatAvail", " ", "=", " ", "False"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"Table", "[", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"seats", " ", "=", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "3", "]"}], "]"}]}], ";", " ", 
+            RowBox[{"dir", " ", "=", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}]}], ";", " ", 
+            RowBox[{"quot", " ", "=", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "5", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+            RowBox[{"(*", " ", 
+             RowBox[{
+              RowBox[{"Don", "'"}], "t", " ", "add", " ", "a", " ", "seat", 
+              " ", "if", " ", "over", " ", "the", " ", "limit"}], " ", "*)"}],
+             "\[IndentingNewLine]", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"dir", " ", "==", " ", "0"}], " ", "&&", " ", 
+               RowBox[{"!", "SeatAvail"}]}], ",", "\[IndentingNewLine]", 
+              RowBox[{"(*", " ", 
+               RowBox[{
+                RowBox[{
+                "If", " ", "not", " ", "at", " ", "the", " ", "limit"}], ",", 
+                " ", 
+                RowBox[{"add", " ", "the", " ", 
+                 RowBox[{"seat", ".", " ", "Otherwise"}]}], ",", " ", 
+                RowBox[{
+                "mark", " ", "it", " ", "as", " ", "above", " ", "the", " ", 
+                 "limit"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+              RowBox[{
+               RowBox[{"SeatAvail", " ", "=", " ", "True"}], ";", 
+               "\[IndentingNewLine]", 
+               RowBox[{"If", "[", 
+                RowBox[{
+                 RowBox[{"IsMax", " ", "&&", " ", 
+                  RowBox[{"seats", " ", ">=", " ", "MaxSeats"}]}], ",", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{
+                  RowBox[{"dir", " ", "=", " ", "1"}], ";", " ", 
+                  RowBox[{"quot", " ", "=", " ", "0"}]}], ",", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{
+                  RowBox[{"seats", " ", "+=", " ", "1"}], ";", " ", 
+                  RowBox[{"quot", " ", "=", " ", 
+                   RowBox[{
+                    RowBox[{"vs", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "/", 
+                    RowBox[{"N", "[", 
+                    RowBox[{"DivisorFunc", "[", "seats", "]"}], "]"}]}]}], 
+                  ";", "\[IndentingNewLine]", 
+                  RowBox[{"RemainingSeats", " ", "-=", " ", "1"}]}]}], 
+                "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", 
+             "]"}], ";", "\[IndentingNewLine]", 
+            RowBox[{"Join", "[", 
+             RowBox[{
+              RowBox[{"Take", "[", 
+               RowBox[{"vs", ",", "2"}], "]"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"seats", ",", "dir", ",", " ", "quot"}], "}"}]}], 
+             "]"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"{", 
+            RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
         RowBox[{"If", "[", 
          RowBox[{
-          RowBox[{"k", " ", ">", " ", 
-           RowBox[{"Length", "[", "vlist", "]"}]}], ",", " ", 
-          RowBox[{"k", " ", "=", " ", "1"}]}], "]"}]}]}], 
-      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
-     RowBox[{"vlist", " ", "=", " ", 
+          RowBox[{"!", "SeatAvail"}], ",", 
+          RowBox[{"Break", "[", "]"}]}], "]"}]}]}], "\[IndentingNewLine]", 
+      "]"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
       RowBox[{"SortBy", "[", 
-       RowBox[{"vlist", ",", 
-        RowBox[{
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "3", "]"}], "]"}]}], ",", 
-           RowBox[{"-", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "2", "]"}], "]"}]}], ",", 
-           RowBox[{"#", "[", 
-            RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}], ";", 
+       RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}]}], ";", 
      "\[IndentingNewLine]", 
-     RowBox[{
+     RowBox[{"Table", "[", 
       RowBox[{
-       RowBox[{"#", "[", 
-        RowBox[{"[", 
-         RowBox[{";;", "3"}], "]"}], "]"}], "&"}], " ", "/@", " ", 
-      "vlist"}]}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
+       RowBox[{"Take", "[", 
+        RowBox[{"vs", ",", "4"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
  CellLabel->
-  "In[537]:=",ExpressionUUID->"73db3f48-8969-466a-bf50-43bea29d762e"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"LRAdjust", "[", "\"\<Hare\>\"", "]"}], " ", "=", " ", "0"}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[538]:=",ExpressionUUID->"3d2265e2-5306-4f04-8a63-f73232dd24e3"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"LRAdjust", "[", "\"\<Droop\>\"", "]"}], " ", "=", " ", "1"}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[539]:=",ExpressionUUID->"5166aa94-2963-4af4-af4d-9d257ad27ecb"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"LRAdjust", "[", "\"\<Imperiali\>\"", "]"}], " ", "=", " ", "2"}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[540]:=",ExpressionUUID->"15aabff9-793b-4b91-a9b2-2d7a00f25405"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"NamedLargestRemainder", "[", 
-   RowBox[{"name_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], " ", ":=",
-   " ", 
-  RowBox[{"LargestRemainder", "[", 
-   RowBox[{
-    RowBox[{"LRAdjust", "[", "name", "]"}], ",", "votes", ",", "seats"}], 
-   "]"}]}]], "Input",
- CellLabel->
-  "In[541]:=",ExpressionUUID->"03a224ef-31ed-44da-bcc7-2557abcf7714"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"LRNames", " ", "=", " ", 
-   RowBox[{"{", 
-    RowBox[{"\"\<Hare\>\"", ",", "\"\<Droop\>\"", ",", "\"\<Imperiali\>\""}], 
-    "}"}]}], ";"}]], "Input",
- CellLabel->
-  "In[542]:=",ExpressionUUID->"9c6c548f-5918-4ad5-9a93-8143932378d8"]
+  "In[272]:=",ExpressionUUID->"2074234d-bd16-403b-a2c0-81f6d141f015"]
 }, Closed]],
 
 Cell[CellGroupData[{
 
-Cell["Adjusted Divisors", "Subsection",ExpressionUUID->"9a780722-3b84-448a-acaa-0c020c186743"],
+Cell["Highest Averages Divisors", "Subsection",ExpressionUUID->"bec2a1be-d11c-4d37-b0ee-29cdec6ef4b0"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DivisorLinear", "[", 
+   RowBox[{"s_", ",", "d0_", ",", 
+    RowBox[{"d1_", ":", "1"}]}], "]"}], " ", ":=", " ", 
+  RowBox[{"d0", " ", "+", " ", 
+   RowBox[{"d1", "*", "s"}]}]}]], "Input",
+ CellLabel->"In[11]:=",ExpressionUUID->"0e950fb2-b164-4a27-9193-87d59226192c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DivisorDifferentInitial", "[", 
+   RowBox[{"DivisorFunc_", ",", "InitialValue_", ",", "s_"}], "]"}], " ", ":=",
+   " ", 
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"s", ">", "0"}], ",", 
+    RowBox[{"DivisorFunc", "[", "s", "]"}], ",", "InitialValue"}], 
+   "]"}]}]], "Input",
+ CellLabel->"In[12]:=",ExpressionUUID->"b6af4327-4047-43aa-8ab5-37344e1ee3d9"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"HADivisors", " ", "=", " ", 
+   RowBox[{"<|", "|>"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<Adams\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorLinear", "[", 
+      RowBox[{"s", ",", "0"}], "]"}]}], ")"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<Danish\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorLinear", "[", 
+      RowBox[{"s", ",", "1", ",", "3"}], "]"}]}], ")"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<SainteLague\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorLinear", "[", 
+      RowBox[{"s", ",", "1", ",", "2"}], "]"}]}], ")"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<ModifiedSainteLague\>\"", "]"}], " ", "=", 
+   " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorDifferentInitial", "[", 
+      RowBox[{
+       RowBox[{"sx", " ", "|->", " ", 
+        RowBox[{"DivisorLinear", "[", 
+         RowBox[{"sx", ",", "1", ",", "2"}], "]"}]}], ",", "1.4", ",", "s"}], 
+      "]"}]}], ")"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<HuntingtonHill\>\"", "]"}], " ", "=", " ", 
+   
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"Sqrt", "[", 
+      RowBox[{"s", "*", 
+       RowBox[{"(", 
+        RowBox[{"s", "+", "1."}], ")"}]}], "]"}]}], ")"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<Dean\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"s", "*", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"s", "+", "1"}], ")"}], "/", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"2", "s"}], "+", "1"}], ")"}]}]}]}], ")"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<SquareMean\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"Sqrt", "[", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"s", "^", "2"}], " ", "+", " ", 
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{"s", "+", "1"}], ")"}], "^", "2"}]}], ")"}], "/", "2"}], 
+      "]"}]}], ")"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<DHondt\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorLinear", "[", 
+      RowBox[{"s", ",", "1"}], "]"}]}], ")"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"HADivisors", "[", "\"\<Imperiali\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"(", 
+    RowBox[{"s", " ", "|->", " ", 
+     RowBox[{"DivisorLinear", "[", 
+      RowBox[{"s", ",", "2"}], "]"}]}], ")"}]}], ";"}]}], "Input",
+ CellLabel->
+  "In[236]:=",ExpressionUUID->"5fb2a1ad-ce1c-4e9b-be57-4e4ac9d985eb"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Largest Remainders", "Subsection",ExpressionUUID->"3ba82c18-195f-4dbb-b706-bbe857481ad5"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Options", "[", "LargestRemainders", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"\"\<MinSeats\>\"", "->", "0"}], ",", 
+     RowBox[{"\"\<MaxSeats\>\"", "->", "Null"}]}], "}"}]}], ";"}]], "Input",
+ CellLabel->
+  "In[347]:=",ExpressionUUID->"092cbb85-aeee-4e24-b05a-ca8c3e9e0db0"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"LargestRemainders", "[", 
+   RowBox[{"QuotaAdjust_", ",", "Votes_", ",", "NumSeats_", ",", 
+    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+     "MinSeats", ",", "MaxSeats", ",", "IsMax", ",", "VoteSeats", ",", 
+      "SortKeyLR", ",", " ", "PrevNumIRMems", ",", "SeatSum", ",", "QuotaSum",
+       ",", "Quota", ",", "QuotaRcp", ",", "stnew", ",", "drnew", ",", 
+      "rmnew", ",", "RemainingSeats", ",", "NumIRMems"}], "}"}], ",", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"MinSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MinSeats\>\"", "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"MaxSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MaxSeats\>\"", "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Maximum", " ", "number", " ", "of", " ", "seats", " ", 
+       RowBox[{"present", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"IsMax", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "=!=", " ", "Null"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Name", ",", " ", 
+       RowBox[{"number", " ", "of", " ", "votes"}], ",", " ", 
+       RowBox[{"number", " ", "of", " ", "seats"}], ",", " ", 
+       RowBox[{"direction", "\[IndentingNewLine]", 
+        RowBox[{"Direction", ":", " ", 
+         RowBox[{"-", "1"}], ":", " ", 
+         RowBox[{"too", " ", "small"}]}]}], ",", " ", 
+       RowBox[{"0", ":", " ", 
+        RowBox[{"in", " ", "range"}]}], ",", " ", 
+       RowBox[{"1", ":", " ", 
+        RowBox[{"too", " ", "large"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"vs", " ", "|->", " ", 
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "2"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], "]"}]}], ")"}], " ", "/@",
+        " ", "Votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+       RowBox[{"Sort", " ", 
+        RowBox[{"order", ":", " ", 
+         RowBox[{"average", " ", "vote"}]}]}], ",", " ", 
+       RowBox[{"total", " ", "vote", " ", 
+        RowBox[{"(", 
+         RowBox[{"highest", " ", "to", " ", "lowest"}], ")"}]}], ",", " ", 
+       RowBox[{"name", " ", 
+        RowBox[{"(", 
+         RowBox[{"lowest", " ", "to", " ", "highest"}], ")"}]}]}], " ", 
+      "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"SortKeyLR", " ", "=", " ", 
+      RowBox[{"(", 
+       RowBox[{"a", " ", "|->", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"-", 
+           RowBox[{"a", "[", 
+            RowBox[{"[", "5", "]"}], "]"}]}], ",", 
+          RowBox[{"-", 
+           RowBox[{"a", "[", 
+            RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+          RowBox[{"a", "[", 
+           RowBox[{"[", "1", "]"}], "]"}]}], "}"}]}], ")"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"PrevNumIRMems", " ", "=", " ", 
+      RowBox[{"Length", "[", "VoteSeats", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"While", "[", 
+      RowBox[{"True", ",", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{
+         RowBox[{"Find", " ", "the", " ", "quota", " ", "to", " ", 
+          RowBox[{"use", ".", " ", "Count"}], " ", "only", " ", "the", " ", 
+          "in"}], "-", 
+         RowBox[{"range", " ", "entries"}]}], " ", "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"SeatSum", " ", "=", " ", "NumSeats"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"QuotaSum", " ", "=", " ", "0"}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}], "==", "0"}], ",", 
+            RowBox[{"QuotaSum", " ", "+=", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "2", "]"}], "]"}]}], ",", 
+            RowBox[{"SeatSum", "-=", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "3", "]"}], "]"}]}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"If", " ", "no", " ", "in"}], "-", 
+           RowBox[{"range", " ", "ones"}]}], ",", 
+          RowBox[{"then", " ", "use", " ", "this", " ", 
+           RowBox[{"result", ":"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"SeatSum", " ", "<=", " ", "0"}], ",", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"Find", " ", "the", " ", "rounded"}], "-", 
+          RowBox[{
+          "down", " ", "number", " ", "of", " ", "seats", " ", "for", " ", 
+           "every", " ", "in"}], "-", 
+          RowBox[{"range", " ", "one"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Quota", " ", "=", " ", 
+         RowBox[{"QuotaSum", "/", 
+          RowBox[{"N", "[", 
+           RowBox[{"SeatSum", " ", "+", " ", "QuotaAdjust"}], "]"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"QuotaRcp", " ", "=", " ", 
+         RowBox[{"1", "/", "Quota"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"Find", " ", "the", " ", "rounded"}], "-", 
+          RowBox[{
+          "down", " ", "number", " ", "of", " ", "seats", " ", "and", " ", 
+           "also", " ", "the", " ", "remainders", "\[IndentingNewLine]", 
+           "for", " ", "every", " ", "in"}], "-", 
+          RowBox[{"range", " ", "one"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+         "Have", " ", "to", " ", "do", " ", "it", " ", "this", " ", "way", 
+          " ", "because", " ", "Mma", " ", 
+          RowBox[{"isn", "'"}], "t", " ", "as", " ", "good", " ", "with", " ",
+           "updating", " ", "arrays", " ", "than", " ", "Python"}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"If", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"vs", "[", 
+               RowBox[{"[", "4", "]"}], "]"}], "!=", "0"}], ",", 
+             "\[IndentingNewLine]", "vs", ",", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"stnew", " ", "=", " ", 
+               RowBox[{"Floor", "[", 
+                RowBox[{"QuotaRcp", "*", 
+                 RowBox[{"vs", "[", 
+                  RowBox[{"[", "2", "]"}], "]"}]}], "]"}]}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"Which", "[", 
+               RowBox[{
+                RowBox[{"stnew", " ", "<", " ", "MinSeats"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"stnew", " ", "=", " ", "MinSeats"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"drnew", " ", "=", " ", 
+                  RowBox[{"-", "1"}]}], ";", "\[IndentingNewLine]", 
+                 RowBox[{"rmnew", " ", "=", " ", "0"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"IsMax", " ", "&&", " ", 
+                 RowBox[{"stnew", " ", ">", " ", "MaxSeats"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"stnew", " ", "=", " ", "MaxSeats"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"drnew", " ", "=", " ", "1"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"rmnew", " ", "=", " ", "0"}]}], ",", 
+                "\[IndentingNewLine]", "True", ",", "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"drnew", " ", "=", " ", "0"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"rmnew", " ", "=", " ", 
+                  RowBox[{
+                   RowBox[{"vs", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], " ", "-", " ", 
+                   RowBox[{"Quota", "*", "stnew"}]}]}]}]}], 
+               "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+              RowBox[{"Join", "[", 
+               RowBox[{
+                RowBox[{"Take", "[", 
+                 RowBox[{"vs", ",", "2"}], "]"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"stnew", ",", "drnew", ",", "rmnew"}], "}"}]}], 
+               "]"}]}]}], "\[IndentingNewLine]", "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"RemainingSeats", " ", "=", " ", "NumSeats"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"RemainingSeats", " ", "-=", " ", 
+           RowBox[{"vs", "[", 
+            RowBox[{"[", "3", "]"}], "]"}]}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"SortBy", "[", 
+          RowBox[{"VoteSeats", ",", "SortKeyLR"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"VoteSeats", " ", "=", " ", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"If", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"RemainingSeats", " ", "<=", " ", "0"}], " ", "||", " ", 
+              RowBox[{
+               RowBox[{"vs", "[", 
+                RowBox[{"[", "4", "]"}], "]"}], "!=", "0"}]}], ",", 
+             "\[IndentingNewLine]", "vs", ",", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"stnew", " ", "=", " ", 
+               RowBox[{"vs", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}], ";", " ", 
+              RowBox[{"drnew", " ", "=", " ", 
+               RowBox[{"vs", "[", 
+                RowBox[{"[", "4", "]"}], "]"}]}], ";", " ", 
+              RowBox[{"rmnew", " ", "=", " ", 
+               RowBox[{"vs", "[", 
+                RowBox[{"[", "5", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+              
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"IsMax", " ", "&&", " ", 
+                 RowBox[{"stnew", " ", ">=", " ", "MaxSeats"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"stnew", " ", "=", " ", "MaxSeats"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"drnew", " ", "=", " ", "1"}], ";", 
+                 "\[IndentingNewLine]", 
+                 RowBox[{"rmnew", " ", "=", " ", "0"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"stnew", " ", "+=", " ", "1"}]}], "]"}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"RemainingSeats", " ", "-=", " ", "1"}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"Join", "[", 
+               RowBox[{
+                RowBox[{"Take", "[", 
+                 RowBox[{"vs", ",", "2"}], "]"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"stnew", ",", "drnew", ",", " ", "rmnew"}], "}"}]}], 
+               "]"}]}]}], "\[IndentingNewLine]", "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"How", " ", "many", " ", "in"}], "-", 
+          RowBox[{"range", " ", 
+           RowBox[{"members", "?"}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"NumIRMems", " ", "=", " ", "0"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}], "!=", "0"}], ",", 
+            RowBox[{"NumIRMems", " ", "+=", " ", "1"}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"NumIRMems", " ", "==", " ", "0"}], ",", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{"If", " ", "no", " ", "change"}], ",", " ", 
+          RowBox[{"then", " ", "accept", " ", "the", " ", "result"}]}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"NumIRMems", " ", "==", " ", "PrevNumIRMems"}], ",", " ", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"PrevNumIRMems", " ", "=", " ", "NumIRMems"}]}]}], 
+      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
+      RowBox[{"SortBy", "[", 
+       RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Table", "[", 
+      RowBox[{
+       RowBox[{"Take", "[", 
+        RowBox[{"vs", ",", "4"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
+ CellLabel->
+  "In[357]:=",ExpressionUUID->"4cc1cbcd-ffd2-4763-aef3-bdff6dac0f56"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Largest Remainders Quota Adjustments", "Subsection",ExpressionUUID->"d49ed494-3b3f-45e4-b1db-b0cc2647fb9a"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"LRQuotaAdjust", " ", "=", " ", 
+   RowBox[{"<|", "|>"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRQuotaAdjust", "[", "\"\<Hare\>\"", "]"}], " ", "=", " ", "0"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRQuotaAdjust", "[", "\"\<Droop\>\"", "]"}], " ", "=", " ", "1"}],
+   ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"LRQuotaAdjust", "[", "\"\<Imperiali\>\"", "]"}], " ", "=", " ", 
+   "2"}], ";"}]}], "Input",
+ CellLabel->"In[25]:=",ExpressionUUID->"89e29da0-26e5-42dd-899e-ed8f183590b4"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Adjusted Divisor", "Subsection",ExpressionUUID->"9a780722-3b84-448a-acaa-0c020c186743"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{"Adjusted", "-", 
+   RowBox[{"divisor", " ", 
+    RowBox[{"method", ".", " ", "It"}], " ", "tries", " ", "divisors", " ", 
+    "until", " ", "one", " ", "of", " ", "them", " ", "gets", " ", "the", " ",
+     "right", " ", "number", " ", "of", " ", 
+    RowBox[{"seats", "."}]}]}], " ", "*)"}]], "Input",
+ CellLabel->"In[29]:=",ExpressionUUID->"49a0f8df-2a98-41a2-983c-70103bb9e754"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{
+  "Returns", " ", "the", " ", "new", " ", "contents", " ", "of", " ", 
+   "VoteSeats", " ", "along", " ", "with", " ", "AllocatedSeats", " ", 
+   "because", " ", "Mathematica", " ", "is", " ", "not", " ", "very", " ", 
+   "good", " ", "at", " ", "updating", " ", "arrays"}], " ", "*)"}]], "Input",\
+
+ CellLabel->"In[30]:=",ExpressionUUID->"24e8b8a3-033d-4d08-a493-29548a5fd9ed"],
 
 Cell[BoxData[
  RowBox[{
   RowBox[{"CountSeatsForDivisor", "[", 
-   RowBox[{"vlist_", ",", " ", "dvsr_", ",", " ", "rndf_"}], "]"}], " ", ":=",
-   " ", 
+   RowBox[{
+   "VoteSeats_", ",", " ", "Divisor_", ",", " ", "RoundFunc_", ",", " ", 
+    "MinSeats_", ",", " ", "MaxSeats_"}], "]"}], " ", ":=", " ", 
   RowBox[{"Module", "[", 
    RowBox[{
     RowBox[{"{", 
-     RowBox[{"nwvlist", ",", "totseats"}], "}"}], ",", "\[IndentingNewLine]", 
-    
+     RowBox[{
+     "IsMax", ",", "AllocatedSeats", ",", "DvsrRecip", ",", "NewVoteSeats", 
+      ",", "seats", ",", "stdir"}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"(*", " ", 
+     RowBox[{"Maximum", " ", "number", " ", "of", " ", "seats", " ", 
+      RowBox[{"present", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{"nwvlist", " ", "=", " ", 
+     RowBox[{"IsMax", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "=!=", " ", "Null"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
       RowBox[{
+      "Makes", " ", "new", " ", "VoteSeats", " ", "as", " ", "it", " ", 
+       "counts", " ", "allocated", " ", "seats"}], " ", "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"AllocatedSeats", " ", "=", " ", "0"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"DvsrRecip", " ", "=", " ", 
+      RowBox[{"1.", "/", "Divisor"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"NewVoteSeats", " ", "=", " ", 
+      RowBox[{"Table", "[", "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{"Append", "[", 
-         RowBox[{
-          RowBox[{"Take", "[", 
-           RowBox[{"#", ",", "3"}], "]"}], ",", 
-          RowBox[{"Max", "[", 
+        RowBox[{
+         RowBox[{"seats", " ", "=", " ", 
+          RowBox[{"RoundFunc", "[", 
+           RowBox[{"DvsrRecip", "*", 
+            RowBox[{"vs", "[", 
+             RowBox[{"[", "2", "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Which", "[", 
+          RowBox[{
+           RowBox[{"seats", " ", "<", " ", "MinSeats"}], ",", 
+           "\[IndentingNewLine]", 
            RowBox[{
-            RowBox[{"rndf", "[", 
-             RowBox[{
-              RowBox[{"#", "[", 
-               RowBox[{"[", "2", "]"}], "]"}], "/", "dvsr"}], "]"}], ",", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "3", "]"}], "]"}]}], "]"}]}], "]"}], "&"}], " ", "/@",
-        " ", "vlist"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"totseats", " ", "=", " ", 
-      RowBox[{"Total", "[", 
-       RowBox[{"Last", " ", "/@", " ", "nwvlist"}], "]"}]}], ";", 
+            RowBox[{"seats", " ", "=", " ", "MinSeats"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"stdir", " ", "=", " ", 
+             RowBox[{"-", "1"}]}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"IsMax", " ", "&&", " ", 
+            RowBox[{"seats", " ", ">", " ", "MaxSeats"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"seats", " ", "=", " ", "MaxSeats"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"stdir", " ", "=", " ", "1"}]}], ",", 
+           "\[IndentingNewLine]", "True", ",", "\[IndentingNewLine]", 
+           RowBox[{"stdir", " ", "=", " ", "0"}]}], "]"}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"AllocatedSeats", " ", "+=", " ", "seats"}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "2"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"seats", ",", "stdir"}], "}"}]}], "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}]}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"{", 
-      RowBox[{"nwvlist", ",", "totseats"}], "}"}]}]}], "\[IndentingNewLine]", 
-   "]"}]}]], "Input",
+      RowBox[{"NewVoteSeats", ",", "AllocatedSeats"}], "}"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
  CellLabel->
-  "In[543]:=",ExpressionUUID->"cbcd36f9-f618-4758-8503-d8405f19ffa2"],
+  "In[123]:=",ExpressionUUID->"cfa681f3-a19d-400f-921c-23b9cfa91248"],
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"AdjDvsrOutput", "[", "vlist_", "]"}], " ", ":=", " ", 
-  RowBox[{"SortBy", "[", 
-   RowBox[{
-    RowBox[{"(", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"#", "[", 
-        RowBox[{"[", 
-         RowBox[{"{", 
-          RowBox[{"1", ",", "2", ",", "4"}], "}"}], "]"}], "]"}], "&"}], " ", 
-      "/@", " ", "vlist"}], ")"}], ",", 
+  RowBox[{
+   RowBox[{"Options", "[", "AdjustDivisor", "]"}], " ", "=", " ", 
+   RowBox[{"{", 
     RowBox[{
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"-", 
-        RowBox[{"#", "[", 
-         RowBox[{"[", "3", "]"}], "]"}]}], ",", 
-       RowBox[{"-", 
-        RowBox[{"#", "[", 
-         RowBox[{"[", "2", "]"}], "]"}]}], ",", 
-       RowBox[{"#", "[", 
-        RowBox[{"[", "1", "]"}], "]"}]}], "}"}], "&"}]}], "]"}]}]], "Input",
+     RowBox[{"\"\<MinSeats\>\"", "->", "0"}], ",", 
+     RowBox[{"\"\<MaxSeats\>\"", "->", "Null"}]}], "}"}]}], ";"}]], "Input",
  CellLabel->
-  "In[544]:=",ExpressionUUID->"80f557d6-41c9-4a58-8c3d-9bfc82314e33"],
+  "In[353]:=",ExpressionUUID->"32b2d65f-ed0b-4baa-a56c-9fa987dfb8da"],
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"AdjustedDivisors", "[", 
-   RowBox[{"adjdir_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], " ", ":=",
-   " ", 
+  RowBox[{"AdjustDivisor", "[", 
+   RowBox[{"RoundDir_", ",", " ", "Votes_", ",", " ", "NumSeats_", ",", " ", 
+    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], " ", ":=", " ", 
   RowBox[{"Module", "[", 
    RowBox[{
     RowBox[{"{", 
      RowBox[{
-     "rndf", ",", "vlist", ",", " ", "dvsr", ",", "dvsrseats", ",", "dvsr1", 
-      ",", "dvsrseats1", ",", "dvsr2", ",", "dvsrseats2"}], "}"}], ",", 
+     "MinSeats", ",", "MaxSeats", ",", " ", "IsMax", ",", " ", "RoundFunc", 
+      ",", " ", "VoteSeats", ",", "TotalVotes", ",", " ", "Divisor", ",", 
+      "DvsrSeats", ",", "DirMin", ",", " ", "DirMax", ",", "Dvsr1", ",", 
+      "Dvsr2", ",", "DvsrSeats1", ",", "DvsrSeats2"}], "}"}], ",", 
     "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{"rndf", " ", "=", " ", 
-      RowBox[{"If", "[", 
-       RowBox[{
-        RowBox[{"adjdir", " ", ">", " ", "0"}], ",", "Ceiling", ",", 
-        RowBox[{"If", "[", 
-         RowBox[{
-          RowBox[{"adjdir", " ", "<", " ", "0"}], ",", " ", "Floor", ",", " ",
-           "Round"}], "]"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"MinSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MinSeats\>\"", "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"MaxSeats", " ", "=", " ", 
+      RowBox[{"OptionValue", "[", "\"\<MaxSeats\>\"", "]"}]}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"(*", " ", 
-      RowBox[{
-       RowBox[{"Members", " ", "have", " ", "party"}], ",", "votes", ",", 
-       RowBox[{"initial", " ", "seats"}], ",", 
-       RowBox[{"calculated", " ", "seats"}]}], " ", "*)"}], 
+      RowBox[{"Maximum", " ", "number", " ", "of", " ", "seats", " ", 
+       RowBox[{"present", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"IsMax", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "=!=", " ", "Null"}]}], ";", 
      "\[IndentingNewLine]", 
-     RowBox[{"vlist", " ", "=", " ", 
-      RowBox[{
+     RowBox[{"(*", " ", 
+      RowBox[{"Set", " ", "the", " ", "rounding", " ", 
+       RowBox[{"function", ":"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"RoundFunc", " ", "=", " ", 
+      RowBox[{"Which", "[", 
        RowBox[{
-        RowBox[{"Append", "[", 
-         RowBox[{
-          RowBox[{"#", "[", 
-           RowBox[{"[", 
-            RowBox[{";;", "3"}], "]"}], "]"}], ",", "0"}], "]"}], "&"}], " ", 
-       "/@", " ", "votes"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"dvsr", " ", "=", " ", 
+        RowBox[{"RoundDir", " ", ">", " ", "0"}], ",", " ", "Ceiling", ",", 
+        " ", 
+        RowBox[{"RoundDir", " ", "<", " ", "0"}], ",", " ", "Floor", ",", 
+        "True", ",", "Round"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
       RowBox[{
-       RowBox[{"N", "[", 
-        RowBox[{"Total", "[", 
-         RowBox[{
+       RowBox[{"Members", " ", "have", " ", "party"}], ",", " ", "votes", ",",
+        " ", 
+       RowBox[{"calculated", " ", "seats"}], ",", " ", "direction"}], " ", 
+      "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"VoteSeats", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"vs", " ", "|->", " ", 
+         RowBox[{"Join", "[", 
           RowBox[{
-           RowBox[{"#", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], "&"}], " ", "/@", " ", "vlist"}], 
-         "]"}], "]"}], "/", 
-       RowBox[{"N", "[", "seats", "]"}]}]}], ";", "\[IndentingNewLine]", 
+           RowBox[{"Take", "[", 
+            RowBox[{"vs", ",", "2"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0"}], "}"}]}], "]"}]}], ")"}], " ", "/@", " ", 
+       "Votes"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"TotalVotes", " ", "=", " ", "0"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{"TotalVotes", " ", "+=", " ", 
+        RowBox[{"vs", "[", 
+         RowBox[{"[", "2", "]"}], "]"}]}], ",", " ", 
+       RowBox[{"{", 
+        RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"(*", " ", 
-      RowBox[{"Initial", " ", "divisor"}], " ", "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"Find", " ", "the", " ", "initial", " ", "divisor"}], " ", 
+      "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"Divisor", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"N", "[", "TotalVotes", "]"}], "/", 
+       RowBox[{"N", "[", "NumSeats", "]"}]}]}], ";", "\[IndentingNewLine]", 
      RowBox[{
       RowBox[{"{", 
-       RowBox[{"vlist", ",", "dvsrseats"}], "}"}], " ", "=", " ", 
+       RowBox[{"VoteSeats", ",", " ", "DvsrSeats"}], "}"}], " ", "=", " ", 
       RowBox[{"CountSeatsForDivisor", "[", 
-       RowBox[{"vlist", ",", " ", "dvsr", ",", " ", "rndf"}], "]"}]}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", "\[IndentingNewLine]", 
+       RowBox[{
+       "VoteSeats", ",", " ", "Divisor", ",", " ", "RoundFunc", ",", " ", 
+        "MinSeats", ",", " ", "MaxSeats"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "Minimum", " ", "and", " ", "maximum", " ", "departures", " ", "from", 
+       " ", "range"}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"DirMin", " ", "=", " ", "1"}], ";", " ", 
+     RowBox[{"DirMax", " ", "=", " ", 
+      RowBox[{"-", "1"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"DirMin", " ", "=", " ", 
+         RowBox[{"Min", "[", 
+          RowBox[{"DirMin", ",", 
+           RowBox[{"vs", "[", 
+            RowBox[{"[", "4", "]"}], "]"}]}], "]"}]}], ";", " ", 
+        RowBox[{"DirMax", " ", "=", " ", 
+         RowBox[{"Max", "[", 
+          RowBox[{"DirMax", ",", 
+           RowBox[{"vs", "[", 
+            RowBox[{"[", "4", "]"}], "]"}]}], "]"}]}]}], ",", 
+       RowBox[{"{", 
+        RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
       RowBox[{
        RowBox[{
         RowBox[{"Find", " ", "the", " ", "divisor"}], "-", 
         RowBox[{"value", " ", 
-         RowBox[{"bracket", ":", 
+         RowBox[{"bracket", ":", " ", 
           RowBox[{
-          "#", " ", "divisor", " ", "and", " ", "number", " ", "of", " ", 
-           "seats", " ", "1", " ", "and", " ", "2", "\[IndentingNewLine]", 
-           "Note"}], ":", " ", 
+          "divisor", " ", "and", " ", "number", " ", "of", " ", "seats", " ", 
+           "1", " ", "and", " ", "2", "\[IndentingNewLine]", "Note"}], ":", 
           RowBox[{
           "the", " ", "calculated", " ", "number", " ", "of", " ", "seats", 
            " ", "decreases", " ", "with", " ", "increasing", " ", 
-           "divisor"}]}]}]}], ",", 
+           "divisor"}]}]}]}], ",", "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{"so", " ", "Dvsr1"}], "<", 
-        RowBox[{"Dvsr2", " ", "and", " ", "DvsrSeats1"}], ">", 
+        RowBox[{"so", " ", "Dvsr1"}], " ", "<", " ", 
+        RowBox[{"Dvsr2", " ", "and", " ", "DvsrSeats1"}], " ", ">", " ", 
         "DvsrSeats2"}]}], "\[IndentingNewLine]", "*)"}], 
      "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
+     RowBox[{"Which", "[", 
       RowBox[{
-       RowBox[{"dvsrseats", " ", ">", " ", "seats"}], ",", 
-       "\[IndentingNewLine]", 
+       RowBox[{"DvsrSeats", ">", "NumSeats"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{"Cannot", " ", "have", " ", "fewer", " ", 
+         RowBox[{"seats", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{"dvsr1", " ", "=", " ", "dvsr"}], ";", "\[IndentingNewLine]", 
-        
-        RowBox[{"dvsrseats1", " ", "=", " ", "dvsrseats"}], ";", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"DirMax", " ", "==", " ", 
+           RowBox[{"-", "1"}]}], ",", " ", 
+          RowBox[{"Return", "[", 
+           RowBox[{"SortBy", "[", 
+            RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}]}], "]"}],
+         ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{"Find", " ", "the", " ", "lower", " ", "bound"}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Dvsr1", " ", "=", " ", "Divisor"}], ";", " ", 
+        RowBox[{"DvsrSeats1", " ", "=", " ", "DvsrSeats"}], ";", 
         "\[IndentingNewLine]", 
         RowBox[{"While", "[", 
          RowBox[{"True", ",", "\[IndentingNewLine]", 
+          RowBox[{"(*", " ", 
+           RowBox[{"Increase", " ", "the", " ", "divisor"}], " ", "*)"}], 
+          "\[IndentingNewLine]", 
           RowBox[{
-           RowBox[{"dvsr", " ", "*=", " ", "2"}], ";", "\[IndentingNewLine]", 
-           
+           RowBox[{"Divisor", " ", "*=", " ", "2"}], ";", 
+           "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{"{", 
-             RowBox[{"vlist", ",", "dvsrseats"}], "}"}], " ", "=", " ", 
+             RowBox[{"VoteSeats", ",", " ", "DvsrSeats"}], "}"}], " ", "=", 
+            " ", 
             RowBox[{"CountSeatsForDivisor", "[", 
-             RowBox[{"vlist", ",", " ", "dvsr", ",", " ", "rndf"}], "]"}]}], 
-           ";", "\[IndentingNewLine]", 
-           RowBox[{"If", "[", 
+             RowBox[{
+             "VoteSeats", ",", " ", "Divisor", ",", " ", "RoundFunc", ",", 
+              " ", "MinSeats", ",", " ", "MaxSeats"}], "]"}]}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
             RowBox[{
-             RowBox[{"dvsrseats", " ", "\[Equal]", " ", "seats"}], ",", 
+            "Return", " ", "if", " ", "successfully", " ", "bracketed"}], " ",
+             "*)"}], "\[IndentingNewLine]", 
+           RowBox[{"Which", "[", 
+            RowBox[{
+             RowBox[{"DvsrSeats", " ", "==", " ", "NumSeats"}], ",", 
              "\[IndentingNewLine]", 
              RowBox[{"Return", "[", 
-              RowBox[{"AdjDvsrOutput", "[", "vlist", "]"}], "]"}]}], 
-            "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-           RowBox[{"If", "[", 
-            RowBox[{
-             RowBox[{"dvsrseats", " ", "<", " ", "seats"}], ",", 
+              RowBox[{"SortBy", "[", 
+               RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"DvsrSeats", " ", "<", " ", "NumSeats"}], ",", 
              "\[IndentingNewLine]", 
              RowBox[{
-              RowBox[{"dvsr2", " ", "=", " ", "dvsr"}], ";", 
-              "\[IndentingNewLine]", 
-              RowBox[{"dvsrseats2", " ", "=", " ", "dvsrseats"}], ";", 
-              "\[IndentingNewLine]", 
+              RowBox[{"Dvsr2", " ", "=", " ", "Divisor"}], ";", " ", 
+              RowBox[{"DvsrSeats2", " ", "=", " ", "DvsrSeats"}], ";", " ", 
               RowBox[{"Break", "[", "]"}]}]}], "\[IndentingNewLine]", 
-            "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}], 
-      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"dvsrseats", " ", "<", " ", "seats"}], ",", 
+            "]"}]}]}], "\[IndentingNewLine]", "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{"Are", " ", "all", " ", "elements", " ", "at", " ", 
+          RowBox[{"minimum", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"DirMax", " ", "=", " ", 
+         RowBox[{"-", "1"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"DirMax", " ", "=", " ", 
+           RowBox[{"Max", "[", 
+            RowBox[{"DirMax", ",", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}]}], "]"}]}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"DirMax", " ", "==", " ", 
+           RowBox[{"-", "1"}]}], ",", " ", 
+          RowBox[{"Break", "[", "]"}]}], "]"}]}], ",", "\[IndentingNewLine]", 
+       
+       RowBox[{"DvsrSeats", " ", "<", " ", "NumSeats"}], ",", 
        "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{"Cannot", " ", "have", " ", "more", " ", 
+         RowBox[{"seats", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{"dvsr2", " ", "=", " ", "dvsr"}], ";", "\[IndentingNewLine]", 
-        
-        RowBox[{"dvsrseats2", " ", "=", " ", "dvsrseats"}], ";", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"DirMin", " ", "==", " ", "1"}], ",", " ", 
+          RowBox[{"Return", "[", 
+           RowBox[{"SortBy", "[", 
+            RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}]}], "]"}],
+         ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{"Find", " ", "the", " ", "upper", " ", "bound"}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Dvsr2", " ", "=", " ", "Divisor"}], ";", " ", 
+        RowBox[{"DvsrSeats2", " ", "=", " ", "DvsrSeats"}], ";", 
         "\[IndentingNewLine]", 
         RowBox[{"While", "[", 
          RowBox[{"True", ",", "\[IndentingNewLine]", 
+          RowBox[{"(*", " ", 
+           RowBox[{"Decrease", " ", "the", " ", "divisor"}], " ", "*)"}], 
+          "\[IndentingNewLine]", 
           RowBox[{
-           RowBox[{"dvsr", " ", "/=", " ", "2"}], ";", "\[IndentingNewLine]", 
-           
+           RowBox[{"Divisor", " ", "/=", " ", "2"}], ";", 
+           "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{"{", 
-             RowBox[{"vlist", ",", "dvsrseats"}], "}"}], " ", "=", " ", 
+             RowBox[{"VoteSeats", ",", " ", "DvsrSeats"}], "}"}], " ", "=", 
+            " ", 
             RowBox[{"CountSeatsForDivisor", "[", 
-             RowBox[{"vlist", ",", " ", "dvsr", ",", " ", "rndf"}], "]"}]}], 
-           ";", "\[IndentingNewLine]", 
-           RowBox[{"If", "[", 
+             RowBox[{
+             "VoteSeats", ",", " ", "Divisor", ",", " ", "RoundFunc", ",", 
+              " ", "MinSeats", ",", " ", "MaxSeats"}], "]"}]}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
             RowBox[{
-             RowBox[{"dvsrseats", " ", "\[Equal]", " ", "seats"}], ",", 
+            "Return", " ", "if", " ", "successfully", " ", "bracketed"}], " ",
+             "*)"}], "\[IndentingNewLine]", 
+           RowBox[{"Which", "[", 
+            RowBox[{
+             RowBox[{"DvsrSeats", " ", "==", " ", "NumSeats"}], ",", 
              "\[IndentingNewLine]", 
              RowBox[{"Return", "[", 
-              RowBox[{"AdjDvsrOutput", "[", "vlist", "]"}], "]"}]}], 
-            "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-           RowBox[{"If", "[", 
-            RowBox[{
-             RowBox[{"dvsrseats", " ", ">", " ", "seats"}], ",", 
+              RowBox[{"SortBy", "[", 
+               RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"DvsrSeats", " ", ">", " ", "NumSeats"}], ",", 
              "\[IndentingNewLine]", 
              RowBox[{
-              RowBox[{"dvsr1", " ", "=", " ", "dvsr"}], ";", 
-              "\[IndentingNewLine]", 
-              RowBox[{"dvsrseats1", " ", "=", " ", "dvsrseats"}], ";", 
-              "\[IndentingNewLine]", 
+              RowBox[{"Dvsr1", " ", "=", " ", "Divisor"}], ";", " ", 
+              RowBox[{"DvsrSeats1", " ", "=", " ", "DvsrSeats"}], ";", " ", 
               RowBox[{"Break", "[", "]"}]}]}], "\[IndentingNewLine]", 
-            "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}], 
-      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"dvsrseats", " ", "\[Equal]", " ", "seats"}], ",", 
-       "\[IndentingNewLine]", 
+            "]"}]}]}], "\[IndentingNewLine]", "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{"Are", " ", "all", " ", "elements", " ", "at", " ", 
+          RowBox[{"maximum", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"DirMin", " ", "=", " ", "1"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"DirMin", " ", "=", " ", 
+           RowBox[{"Min", "[", 
+            RowBox[{"DirMin", ",", " ", 
+             RowBox[{"vs", "[", 
+              RowBox[{"[", "4", "]"}], "]"}]}], "]"}]}], ",", 
+          RowBox[{"{", 
+           RowBox[{"vs", ",", "VoteSeats"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"DirMin", " ", "==", " ", "1"}], ",", " ", 
+          RowBox[{"Break", "[", "]"}]}], "]"}]}], ",", "\[IndentingNewLine]", 
+       "True", ",", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", "Equal", " ", "*)"}], "\[IndentingNewLine]", 
        RowBox[{"Return", "[", 
-        RowBox[{"AdjDvsrOutput", "[", "vlist", "]"}], "]"}]}], 
+        RowBox[{"SortBy", "[", 
+         RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}]}], 
       "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
      RowBox[{"(*", " ", 
       RowBox[{
       "Find", " ", "the", " ", "next", " ", "value", " ", "with", " ", 
@@ -833,121 +1487,99 @@ Cell[BoxData[
      RowBox[{"While", "[", 
       RowBox[{"True", ",", "\[IndentingNewLine]", 
        RowBox[{
-        RowBox[{"dvsr", " ", "=", " ", 
-         RowBox[{"dvsr1", " ", "+", " ", 
+        RowBox[{"Divisor", " ", "=", " ", 
+         RowBox[{"Dvsr1", " ", "+", " ", 
           RowBox[{
            RowBox[{"(", 
-            RowBox[{"dvsr2", " ", "-", " ", "dvsr1"}], ")"}], "*", 
-           RowBox[{"(", 
-            RowBox[{
-             RowBox[{"N", "[", 
-              RowBox[{"seats", " ", "-", " ", "dvsrseats1"}], "]"}], "/", 
-             RowBox[{"N", "[", 
-              RowBox[{"dvsrseats2", " ", "-", " ", "dvsrseats1"}], "]"}]}], 
-            ")"}]}]}]}], ";", "\[IndentingNewLine]", 
+            RowBox[{"Dvsr2", "-", "Dvsr1"}], ")"}], " ", "*", " ", 
+           RowBox[{
+            RowBox[{"N", "[", 
+             RowBox[{"NumSeats", "-", "DvsrSeats1"}], "]"}], " ", "/", " ", 
+            RowBox[{"N", "[", 
+             RowBox[{"DvsrSeats2", " ", "-", " ", "DvsrSeats1"}], 
+             "]"}]}]}]}]}], ";", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{"{", 
-          RowBox[{"vlist", ",", "dvsrseats"}], "}"}], " ", "=", " ", 
+          RowBox[{"VoteSeats", ",", " ", "DvsrSeats"}], "}"}], " ", "=", " ", 
+         
          RowBox[{"CountSeatsForDivisor", "[", 
-          RowBox[{"vlist", ",", " ", "dvsr", ",", " ", "rndf"}], "]"}]}], ";",
-         "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{
+          "VoteSeats", ",", " ", "Divisor", ",", " ", "RoundFunc", ",", " ", 
+           "MinSeats", ",", " ", "MaxSeats"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
         RowBox[{"(*", " ", 
          RowBox[{"Interval", " ", "too", " ", 
           RowBox[{"small", "?"}]}], " ", "*)"}], "\[IndentingNewLine]", 
-        RowBox[{
-         RowBox[{"If", "[", 
-          RowBox[{
-           RowBox[{
-            RowBox[{
-             RowBox[{"Abs", "[", 
-              RowBox[{"dvsr1", "-", "dvsr2"}], "]"}], "/", 
-             RowBox[{"(", 
-              RowBox[{"dvsr1", "+", "dvsr2"}], ")"}]}], " ", "<", " ", 
-            RowBox[{"10.", "^", 
-             RowBox[{"(", 
-              RowBox[{"-", "8"}], ")"}]}]}], ",", "\[IndentingNewLine]", 
-           RowBox[{"Return", "[", 
-            RowBox[{"AdjDvsrOutput", "[", "vlist", "]"}], "]"}]}], 
-          "\[IndentingNewLine]", "]"}], "\[IndentingNewLine]", 
-         "\[IndentingNewLine]", 
-         RowBox[{"(*", " ", 
-          RowBox[{"Divisor", " ", "too", " ", 
-           RowBox[{"small", "?", " ", "Replace"}], " ", "the", " ", "lower", 
-           " ", "bound"}], " ", "*)"}], "\[IndentingNewLine]", 
-         RowBox[{"If", "[", 
-          RowBox[{
-           RowBox[{"dvsrseats", " ", ">", " ", "seats"}], ",", " ", 
-           RowBox[{
-            RowBox[{"dvsr1", " ", "=", " ", "dvsr"}], ";", " ", 
-            RowBox[{"dvsrseats1", " ", "=", " ", "dvsrseats"}]}]}], "]"}], 
-         "l", "\[IndentingNewLine]", "\[IndentingNewLine]", 
-         RowBox[{"(*", " ", 
-          RowBox[{"Divisor", " ", "too", " ", 
-           RowBox[{"large", "?", " ", "Replace"}], " ", "the", " ", "upper", 
-           " ", "bound"}], " ", "*)"}], "\[IndentingNewLine]", 
-         RowBox[{"If", "[", 
-          RowBox[{
-           RowBox[{"dvsrseats", " ", "<", " ", "seats"}], ",", " ", 
-           RowBox[{
-            RowBox[{"dvsr2", " ", "=", " ", "dvsr"}], ";", " ", 
-            RowBox[{"dvsrseats2", " ", "=", " ", "dvsrseats"}]}]}], "]"}]}], 
-        ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
         RowBox[{"If", "[", 
          RowBox[{
-          RowBox[{"dvsrseats", " ", "\[Equal]", " ", "seats"}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Abs", "[", 
+             RowBox[{"Dvsr2", " ", "-", " ", "Dvsr1"}], "]"}], "/", 
+            RowBox[{"N", "[", 
+             RowBox[{"Dvsr1", "+", "Dvsr2"}], "]"}]}], " ", "<", " ", 
+           RowBox[{"10.", "^", 
+            RowBox[{"(", 
+             RowBox[{"-", "8"}], ")"}]}]}], ",", " ", 
+          RowBox[{"Break", "[", "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Which", "[", 
+         RowBox[{
+          RowBox[{"DvsrSeats", " ", ">", " ", "NumSeats"}], ",", 
           "\[IndentingNewLine]", 
-          RowBox[{"Return", "[", 
-           RowBox[{"AdjDvsrOutput", "[", "vlist", "]"}], "]"}]}], 
-         "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}], 
+          RowBox[{"(*", " ", 
+           RowBox[{"Divisor", " ", "too", " ", 
+            RowBox[{"small", ":", " ", 
+             RowBox[{"replace", " ", "the", " ", "lower", " ", "bound"}]}]}], 
+           " ", "*)"}], "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"Dvsr1", " ", "=", " ", "Divisor"}], ";", " ", 
+           RowBox[{"DvsrSeats1", " ", "=", " ", "DvsrSeats"}]}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"DvsrSeats", " ", "<", " ", "NumSeats"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"(*", " ", 
+           RowBox[{"Divisor", " ", "too", " ", 
+            RowBox[{"large", ":", " ", 
+             RowBox[{"replace", " ", "the", " ", "upper", " ", "bound"}]}]}], 
+           " ", "*)"}], "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"Dvsr2", " ", "=", " ", "Divisor"}], ";", " ", 
+           RowBox[{"DvsrSeats2", " ", "=", " ", "DvsrSeats"}]}], ",", 
+          "\[IndentingNewLine]", "True", ",", "\[IndentingNewLine]", 
+          RowBox[{"(*", " ", "Equal", " ", "*)"}], "\[IndentingNewLine]", 
+          RowBox[{"Break", "[", "]"}]}], "\[IndentingNewLine]", "]"}]}]}], 
+      "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", "Finally", " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"Return", "[", 
+      RowBox[{"Identity", "[", 
+       RowBox[{"SortBy", "[", 
+        RowBox[{"VoteSeats", ",", "SortKeyFinal"}], "]"}], "]"}], "]"}]}]}], 
    "\[IndentingNewLine]", "]"}]}]], "Input",
  CellLabel->
-  "In[545]:=",ExpressionUUID->"402b2ddb-8e6c-49f3-9c0c-6e61d262f28e"],
+  "In[354]:=",ExpressionUUID->"3e88b444-5785-4137-b78d-a8287cc3b521"]
+}, Closed]],
 
-Cell[BoxData[
+Cell[CellGroupData[{
+
+Cell["Adjusted Divisor Rounding Direction", "Subsection",ExpressionUUID->"01e88c91-e619-4154-afdf-1f5f9d34d174"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ADRounding", " ", "=", " ", 
+   RowBox[{"<|", "|>"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
-   RowBox[{"ADAdjust", "[", "\"\<Jefferson\>\"", "]"}], " ", "=", " ", 
-   RowBox[{"-", "1"}]}], ";"}]], "Input",
- CellLabel->
-  "In[546]:=",ExpressionUUID->"e86069c3-f79d-436f-9153-09e8960300af"],
-
-Cell[BoxData[
+   RowBox[{"ADRounding", "[", "\"\<Jefferson\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"-", "1"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
-   RowBox[{"ADAdjust", "[", "\"\<Webster\>\"", "]"}], " ", "=", " ", "0"}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[547]:=",ExpressionUUID->"031aa098-e6d7-409c-9648-5634c108fe66"],
-
-Cell[BoxData[
+   RowBox[{"ADRounding", "[", "\"\<Webster\>\"", "]"}], " ", "=", " ", "0"}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
-   RowBox[{"ADAdjust", "[", "\"\<Adams\>\"", "]"}], " ", "=", " ", "1"}], 
-  ";"}]], "Input",
- CellLabel->
-  "In[548]:=",ExpressionUUID->"330f884c-5eb1-452b-9f54-67ec745e2904"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"NamedAdjustedDivisors", "[", 
-   RowBox[{"name_", ",", " ", "votes_", ",", " ", "seats_"}], "]"}], " ", ":=",
-   " ", 
-  RowBox[{"AdjustedDivisors", "[", 
-   RowBox[{
-    RowBox[{"ADAdjust", "[", "name", "]"}], ",", "votes", ",", "seats"}], 
-   "]"}]}]], "Input",
- CellLabel->
-  "In[549]:=",ExpressionUUID->"01d9ca3d-9eac-4f73-bf34-450735cbc99d"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"ADNames", " ", "=", " ", 
-   RowBox[{"{", 
-    RowBox[{
-    "\"\<Jefferson\>\"", ",", "\"\<Webster\>\"", ",", "\"\<Adams\>\""}], 
-    "}"}]}], ";"}]], "Input",
- CellLabel->
-  "In[550]:=",ExpressionUUID->"6d3ddb2a-fb67-458e-8f2b-c8066ecee510"]
+   RowBox[{"ADRounding", "[", "\"\<Adams\>\"", "]"}], " ", "=", " ", "1"}], 
+  ";"}]}], "Input",
+ CellLabel->"In[34]:=",ExpressionUUID->"ba1c6e10-eb53-4964-87eb-bd5cd946dde9"]
 }, Closed]]
 }, Closed]],
 
@@ -955,329 +1587,1348 @@ Cell[CellGroupData[{
 
 Cell["Examples", "Section",ExpressionUUID->"fa94d2d5-c959-48ae-be6e-0b6f7c01e95f"],
 
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{"From", " ", "a", " ", "Wikipedia", " ", "article"}], " ", 
-  "*)"}]], "Input",
- CellLabel->
-  "In[551]:=",ExpressionUUID->"2bcbb793-1191-45bb-a9d4-dc4c136da167"],
-
-Cell[BoxData[
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ExampleAlgs", " ", "=", " ", 
+   RowBox[{"<|", "|>"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
-   RowBox[{"SampleVotes", "[", "\"\<DH\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"ExampleAlgs", "[", "\"\<DH\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"HighestAverages", "[", 
+     RowBox[{
+      RowBox[{"HADivisors", "[", "\"\<DHondt\>\"", "]"}], ",", " ", 
+      RowBox[{"AddInitial", "[", "v", "]"}], ",", " ", "n"}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<SL\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"HighestAverages", "[", 
+     RowBox[{
+      RowBox[{"HADivisors", "[", "\"\<SainteLague\>\"", "]"}], ",", " ", 
+      RowBox[{"AddInitial", "[", "v", "]"}], ",", " ", "n"}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<MSL\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"HighestAverages", "[", 
+     RowBox[{
+      RowBox[{"HADivisors", "[", "\"\<ModifiedSainteLague\>\"", "]"}], ",", 
+      " ", 
+      RowBox[{"AddInitial", "[", "v", "]"}], ",", " ", "n"}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<HH\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"HighestAverages", "[", 
+     RowBox[{
+      RowBox[{"HADivisors", "[", "\"\<HuntingtonHill\>\"", "]"}], ",", " ", 
+      RowBox[{"AddInitial", "[", 
+       RowBox[{"v", ",", "1"}], "]"}], ",", " ", "n"}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<Hare\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"LargestRemainders", "[", 
+     RowBox[{
+      RowBox[{"LRQuotaAdjust", "[", "\"\<Hare\>\"", "]"}], ",", " ", "v", ",",
+       " ", "n"}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<Droop\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"LargestRemainders", "[", 
+     RowBox[{
+      RowBox[{"LRQuotaAdjust", "[", "\"\<Droop\>\"", "]"}], ",", " ", "v", 
+      ",", " ", "n"}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<Jf\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"AdjustedDivisors", "[", 
+     RowBox[{
+      RowBox[{"ADRounding", "[", "\"\<Jefferson\>\"", "]"}], ",", " ", "v", 
+      ",", " ", "n"}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<Wb\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"AdjustedDivisors", "[", 
+     RowBox[{
+      RowBox[{"ADRounding", "[", "\"\<Webster\>\"", "]"}], ",", " ", "v", ",",
+       " ", "n"}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleAlgs", "[", "\"\<Ad\>\"", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"v", ",", "n"}], "}"}], " ", "|->", " ", 
+    RowBox[{"AdjustedDivisors", "[", 
+     RowBox[{
+      RowBox[{"ADRounding", "[", "\"\<Adams\>\"", "]"}], ",", " ", "v", ",", 
+      " ", "n"}], "]"}]}]}], ";"}]}], "Input",
+ CellLabel->
+  "In[326]:=",ExpressionUUID->"88d0d92b-670b-4052-9837-debab45308a9"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ExampleVotes", "=", 
+   RowBox[{"<|", "|>"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<EleW HA - DH SL MSL\>\"", "]"}], "=", 
    RowBox[{"{", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"\"\<A\>\"", ",", "100"}], "}"}], ",", " ", 
+      RowBox[{"\"\<Yellow\>\"", ",", "47000", ",", "5", ",", "4", ",", "5"}], 
+      "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<B\>\"", ",", "80"}], "}"}], ",", " ", 
+      RowBox[{"\"\<White\>\"", ",", "16000", ",", "2", ",", "2", ",", "2"}], 
+      "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<C\>\"", ",", "30"}], "}"}], ",", " ", 
+      RowBox[{"\"\<Red\>\"", ",", "15900", ",", "2", ",", "2", ",", "2"}], 
+      "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<D\>\"", ",", "20"}], "}"}]}], "}"}]}], ";"}]], "Input",
- CellLabel->
-  "In[552]:=",ExpressionUUID->"5a3cc09a-e7bd-4a07-8717-c0df9d60ccc2"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{
-    RowBox[{"D", "'"}], "Hondt", " ", "target", " ", "for", " ", "8", " ", 
-    RowBox[{"seats", ":", "\[IndentingNewLine]", "A", ":", "4"}]}], ",", " ", 
-   
-   RowBox[{"B", ":", "3"}], ",", " ", 
-   RowBox[{"C", ":", "1"}], ",", " ", 
-   RowBox[{"D", ":", "0"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[553]:=",ExpressionUUID->"5609c4a3-cebc-4c5a-8729-ab22d9129598"],
-
-Cell[BoxData[
- RowBox[{"NamedHighestAverages", "[", 
-  RowBox[{"\"\<D'Hondt\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<DH\>\"", "]"}], "]"}], ",", "8"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[554]:=",ExpressionUUID->"099a8dd0-de03-418b-afb5-ded6f79d30b3"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{"From", " ", "a", " ", "Wikipedia", " ", "article"}], " ", 
-  "*)"}]], "Input",
- CellLabel->
-  "In[555]:=",ExpressionUUID->"945fd6df-2a5a-4bc5-bb14-9d7055e09ebd"],
-
-Cell[BoxData[
+      RowBox[{"\"\<Green\>\"", ",", "12000", ",", "1", ",", "1", ",", "1"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Blue\>\"", ",", "6000", ",", "0", ",", "1", ",", "0"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Pink\>\"", ",", "3100", ",", "0", ",", "0", ",", "0"}], 
+      "}"}]}], "}"}]}], ";"}], "\n", 
  RowBox[{
   RowBox[{
-   RowBox[{"SampleVotes", "[", "\"\<SL\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"ExampleVotes", "[", "\"\<Wiki DH Old - DH\>\"", "]"}], "=", 
    RowBox[{"{", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"\"\<A\>\"", ",", "53"}], "}"}], ",", " ", 
+      RowBox[{"\"\<A\>\"", ",", "100", ",", "4"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<B\>\"", ",", "24"}], "}"}], ",", " ", 
+      RowBox[{"\"\<B\>\"", ",", "80", ",", "3"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<C\>\"", ",", "23"}], "}"}]}], "}"}]}], ";"}]], "Input",
- CellLabel->
-  "In[556]:=",ExpressionUUID->"6061cd2f-0074-4bb6-b984-638e186cadb7"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{"Sainte", "-", 
-    RowBox[{"Lague", " ", "target", " ", "for", " ", "7", " ", 
-     RowBox[{"seats", ":", "\[IndentingNewLine]", "A", ":", "3"}]}]}], ",", 
-   " ", 
-   RowBox[{"B", ":", "2"}], ",", " ", 
-   RowBox[{"C", ":", "2"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[557]:=",ExpressionUUID->"3278d4f9-9504-45ba-8e6c-0fbab4385142"],
-
-Cell[BoxData[
- RowBox[{"NamedHighestAverages", "[", 
-  RowBox[{"\"\<Sainte-Lague\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<SL\>\"", "]"}], "]"}], ",", "7"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[558]:=",ExpressionUUID->"94d37b55-dd84-4c44-b096-e80f6abc0de9"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{
-   "From", " ", "the", " ", "Wikipedia", " ", "article", " ", "on", " ", 
-    "highest"}], "-", "averages"}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[559]:=",ExpressionUUID->"113d3a59-1aeb-4e28-9502-207e02571c6c"],
-
-Cell[BoxData[
+      RowBox[{"\"\<C\>\"", ",", "30", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<D\>\"", ",", "20", ",", "0"}], "}"}]}], "}"}]}], 
+  ";"}], "\n", 
  RowBox[{
   RowBox[{
-   RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"ExampleVotes", "[", "\"\<ElecW DH - DH\>\"", "]"}], "=", 
    RowBox[{"{", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"\"\<Yellow\>\"", ",", "47000"}], "}"}], ",", " ", 
+      RowBox[{"\"\<A\>\"", ",", "340000", ",", "3"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<White\>\"", ",", "16000"}], "}"}], ",", " ", 
+      RowBox[{"\"\<B\>\"", ",", "280000", ",", "3"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<Red\>\"", ",", "15900"}], "}"}], ",", " ", 
+      RowBox[{"\"\<C\>\"", ",", "160000", ",", "1"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<Green\>\"", ",", "12000"}], "}"}], ",", " ", 
+      RowBox[{"\"\<D\>\"", ",", "60000", ",", "0"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<Blue\>\"", ",", "6000"}], "}"}], ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<Pink\>\"", ",", "3100"}], "}"}]}], "}"}]}], ";"}]], "Input",\
-
- CellLabel->
-  "In[560]:=",ExpressionUUID->"99535f53-f48c-4e32-afc6-4652eff24cd4"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{
-    RowBox[{"D", "'"}], "Hondt", " ", "target", " ", "for", " ", "10", " ", 
-    RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}], ",", 
-   " ", 
-   RowBox[{"White", ":", "2"}], ",", " ", 
-   RowBox[{"Red", ":", "2"}], ",", " ", 
-   RowBox[{"Green", ":", "1"}], ",", " ", 
-   RowBox[{"Blue", ":", "0"}], ",", " ", 
-   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[561]:=",ExpressionUUID->"9671c48c-b1c0-49f0-81c8-81ed0b8a3abc"],
-
-Cell[BoxData[
- RowBox[{"NamedHighestAverages", "[", 
-  RowBox[{"\"\<D'Hondt\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[562]:=",ExpressionUUID->"eba7ade0-3612-4f89-8b1c-9e38a16d38de"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{"Sainte", "-", 
-    RowBox[{"Lague", " ", "target", " ", "for", " ", "10", " ", 
-     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "4"}]}]}], 
-   ",", " ", 
-   RowBox[{"White", ":", "2"}], ",", " ", 
-   RowBox[{"Red", ":", "2"}], ",", " ", 
-   RowBox[{"Green", ":", "1"}], ",", " ", 
-   RowBox[{"Blue", ":", "1"}], ",", " ", 
-   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[563]:=",ExpressionUUID->"b3b0ca63-234d-443c-8f0e-dfb06b25bc6a"],
-
-Cell[BoxData[
- RowBox[{"NamedHighestAverages", "[", 
-  RowBox[{"\"\<Sainte-Lague\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[564]:=",ExpressionUUID->"ca700244-b90a-43e4-8003-d4ac260db210"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{
-    RowBox[{"Modified", " ", "Sainte"}], "-", 
-    RowBox[{"Lague", " ", "target", " ", "for", " ", "10", " ", 
-     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
-   ",", " ", 
-   RowBox[{"White", ":", "2"}], ",", " ", 
-   RowBox[{"Red", ":", "2"}], ",", " ", 
-   RowBox[{"Green", ":", "1"}], ",", " ", 
-   RowBox[{"Blue", ":", "0"}], ",", "  ", 
-   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[565]:=",ExpressionUUID->"f44b2528-0030-4f6a-958d-7401c71fac57"],
-
-Cell[BoxData[
- RowBox[{"NamedHighestAverages", "[", 
-  RowBox[{"\"\<Modified Sainte-Lague\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<HA\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[566]:=",ExpressionUUID->"1915c275-086a-48b2-a33b-571c5663ba07"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
-  RowBox[{
-   RowBox[{
-   "Fom", " ", "the", " ", "Wikipedia", " ", "article", " ", "on", " ", 
-    "largest"}], "-", "remainder"}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[567]:=",ExpressionUUID->"07cd8e90-7df2-45a3-863c-a33baf17ef40"],
-
-Cell[BoxData[
+      RowBox[{"\"\<E\>\"", ",", "15000", ",", "0"}], "}"}]}], "}"}]}], 
+  ";"}], "\n", 
  RowBox[{
   RowBox[{
-   RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], " ", "=", " ", 
+   RowBox[{"ExampleVotes", "[", "\"\<Wiki SL Old - SL\>\"", "]"}], "=", 
    RowBox[{"{", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"\"\<Yellow\>\"", ",", "47000"}], "}"}], ",", " ", 
+      RowBox[{"\"\<A\>\"", ",", "53", ",", "3"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<White\>\"", ",", "16000"}], "}"}], ",", " ", 
+      RowBox[{"\"\<B\>\"", ",", "24", ",", "2"}], "}"}], ",", 
      RowBox[{"{", 
-      RowBox[{"\"\<Red\>\"", ",", "15800"}], "}"}], ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<Green\>\"", ",", "12000"}], "}"}], ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<Blue\>\"", ",", "6100"}], "}"}], ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<Pink\>\"", ",", "3100"}], "}"}]}], "}"}]}], ";"}]], "Input",\
-
- CellLabel->
-  "In[568]:=",ExpressionUUID->"915be76e-8558-4f38-a9dc-42f7a5ef6a51"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
+      RowBox[{"\"\<C\>\"", ",", "23", ",", "2"}], "}"}]}], "}"}]}], 
+  ";"}], "\n", 
+ RowBox[{
   RowBox[{
-   RowBox[{"Highest", "-", 
+   RowBox[{"ExampleVotes", "[", "\"\<Elec SL - DH SL\>\"", "]"}], "=", 
+   RowBox[{"{", 
     RowBox[{
-    "Remainder", " ", "Hare", " ", "target", " ", "for", " ", "10", " ", 
-     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
-   ",", " ", 
-   RowBox[{"White", ":", "2"}], ",", " ", 
-   RowBox[{"Red", ":", "1"}], ",", " ", 
-   RowBox[{"Green", ":", "1"}], ",", " ", 
-   RowBox[{"Blue", ":", "1"}], ",", " ", 
-   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input",
- CellLabel->
-  "In[569]:=",ExpressionUUID->"94dbd59b-1b33-4e38-8a6a-429e66f99b19"],
-
-Cell[BoxData[
- RowBox[{"NamedLargestRemainder", "[", 
-  RowBox[{"\"\<Hare\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[570]:=",ExpressionUUID->"c35acc68-3c0b-4575-8ac3-a2822859f850"],
-
-Cell[BoxData[
- RowBox[{"(*", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<A\>\"", ",", "503", ",", "18", ",", "17"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<B\>\"", ",", "304", ",", "10", ",", "10"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<C\>\"", ",", "193", ",", "6", ",", "7"}], "}"}]}], "}"}]}],
+   ";"}], "\n", 
+ RowBox[{
   RowBox[{
-   RowBox[{"Highest", "-", 
+   RowBox[{"ExampleVotes", "[", "\"\<Wiki DH SL - DH SL\>\"", "]"}], "=", 
+   RowBox[{"{", 
     RowBox[{
-    "Remainder", " ", "Droop", " ", "target", " ", "for", " ", "10", " ", 
-     RowBox[{"seats", ":", "\[IndentingNewLine]", "Yellow", ":", "5"}]}]}], 
-   ",", " ", 
-   RowBox[{"White", ":", "2"}], ",", " ", 
-   RowBox[{"Red", ":", "2"}], ",", " ", 
-   RowBox[{"Green", ":", "1"}], ",", " ", 
-   RowBox[{"Blue", ":", "0"}], ",", " ", 
-   RowBox[{"Pink", ":", "0"}]}], " ", "*)"}]], "Input",
+     RowBox[{"{", 
+      RowBox[{"\"\<A\>\"", ",", "100000", ",", "4", ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<B\>\"", ",", "80000", ",", "3", ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<C\>\"", ",", "30000", ",", "1", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<D\>\"", ",", "20000", ",", "0", ",", "1"}], "}"}]}], 
+    "}"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<Wiki HH - HH DH\>\"", "]"}], "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<Likud\>\"", ",", "985408", ",", "30", ",", "30"}], "}"}], 
+     ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Zionist Union\>\"", ",", "786313", ",", "24", ",", "24"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Joint List\>\"", ",", "446583", ",", "13", ",", "13"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Yesh Atid\>\"", ",", "371602", ",", "11", ",", "11"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Kulanu\>\"", ",", "315360", ",", "9", ",", "10"}], "}"}], 
+     ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<The Jewish Home\>\"", ",", "283910", ",", "9", ",", "8"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Shas\>\"", ",", "241613", ",", "7", ",", "7"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Yisrael Beiteinu\>\"", ",", "214906", ",", "6", ",", "6"}],
+       "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<United Torah Judaism\>\"", ",", "210143", ",", "6", ",", "6"}], 
+      "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Meretz\>\"", ",", "165529", ",", "5", ",", "5"}], "}"}]}], 
+    "}"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<Wiki EleW LR - Hare Droop\>\"", "]"}], 
+   "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<Yellow\>\"", ",", "47000", ",", "5", ",", "5"}], "}"}], 
+     ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<White\>\"", ",", "16000", ",", "2", ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Red\>\"", ",", "15800", ",", "1", ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Green\>\"", ",", "12000", ",", "1", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Blue\>\"", ",", "6100", ",", "1", ",", "0"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Pink\>\"", ",", "3100", ",", "0", ",", "0"}], "}"}]}], 
+    "}"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<EleW Ham - Hare\>\"", "]"}], "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<Virginia\>\"", ",", "630560", ",", "11"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Massachusetts\>\"", ",", "475327", ",", "8"}], "}"}], ",", 
+     
+     RowBox[{"{", 
+      RowBox[{"\"\<Pennsylvania\>\"", ",", "432879", ",", "7"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<North Carolina\>\"", ",", "353523", ",", "6"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<New York\>\"", ",", "331589", ",", "6"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Maryland\>\"", ",", "278514", ",", "5"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Connecticut\>\"", ",", "236841", ",", "4"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<South Carolina\>\"", ",", "206236", ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<New Jersey\>\"", ",", "179570", ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<New Hampshire\>\"", ",", "141822", ",", "2"}], "}"}], ",", 
+     
+     RowBox[{"{", 
+      RowBox[{"\"\<Vermont\>\"", ",", "85533", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Georgia\>\"", ",", "70835", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Kentucky\>\"", ",", "68705", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Rhode Island\>\"", ",", "68446", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Delaware\>\"", ",", "55540", ",", "1"}], "}"}]}], "}"}]}], 
+  ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<LbTx 1 - Hare HH Jf Ad Wb\>\"", "]"}], 
+   "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Alpha\>\"", ",", "24000", ",", "2", ",", "2", ",", "2", ",", "3", 
+       ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Beta\>\"", ",", "56000", ",", "5", ",", "6", ",", "6", ",", "6", 
+       ",", "6"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Gamma\>\"", ",", "28000", ",", "2", ",", "3", ",", "3", ",", "3", 
+       ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Delta\>\"", ",", "17000", ",", "1", ",", "2", ",", "2", ",", "2", 
+       ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Epsilon\>\"", ",", "65000", ",", "6", ",", "7", ",", "7", ",", "6",
+        ",", "7"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<Zeta\>\"", ",", "47000", ",", "4", ",", "5", ",", "5", ",", "5", 
+       ",", "5"}], "}"}]}], "}"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ExampleVotes", "[", "\"\<LbTx 2 - Hare Jf Ad Wb HH\>\"", "]"}], 
+   "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<A\>\"", ",", "25010", ",", "15", ",", "16", ",", "15", ",", "15", 
+       ",", "15"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<B\>\"", ",", "8760", ",", "5", ",", "5", ",", "5", ",", "5", ",", 
+       "5"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<C\>\"", ",", "11590", ",", "7", ",", "7", ",", "7", ",", "7", ",", 
+       "7"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<D\>\"", ",", "9025", ",", "6", ",", "5", ",", "6", ",", "6", ",", 
+       "6"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+      "\"\<E\>\"", ",", "15080", ",", "9", ",", "9", ",", "9", ",", "9", ",", 
+       "9"}], "}"}]}], "}"}]}], ";"}]}], "Input",
  CellLabel->
-  "In[571]:=",ExpressionUUID->"37f51bd3-fa52-4eb9-9fbd-302ea0f836cf"],
-
-Cell[BoxData[
- RowBox[{"NamedLargestRemainder", "[", 
-  RowBox[{"\"\<Droop\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[572]:=",ExpressionUUID->"bf9a6d42-f325-48c2-9142-2733e86589c8"],
+  "In[257]:=",ExpressionUUID->"ece0914b-ca63-4259-a64f-64bb70618b92"],
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"SampleVoteNames", " ", "=", " ", 
-   RowBox[{"{", 
+  RowBox[{"ExampleEvaluate", "[", 
+   RowBox[{"key_", ",", "val_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+     "name", ",", "algs", ",", "num", ",", "seats", ",", " ", "srcix", ",", 
+      "vltr", ",", "outtr", ",", "alg", ",", "tgtsts", ",", "res", ",", 
+      "rssrt", ",", "rstr"}], "}"}], ",", "\[IndentingNewLine]", 
     RowBox[{
-    "\"\<DH\>\"", ",", "\"\<SL\>\"", ",", "\"\<HA\>\"", ",", "\"\<LR\>\""}], 
-    "}"}]}], ";"}]], "Input",
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"name", ",", " ", "algs"}], "}"}], " ", "=", " ", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"key", ",", "\"\< - \>\""}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"algs", " ", "=", " ", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"algs", ",", "\"\< \>\""}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"num", " ", "=", " ", 
+      RowBox[{"Length", "[", "val", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"srcix", "[", 
+         RowBox[{"val", "[", 
+          RowBox[{"[", 
+           RowBox[{"k", ",", "1"}], "]"}], "]"}], "]"}], " ", "=", " ", "k"}],
+        ",", 
+       RowBox[{"{", 
+        RowBox[{"k", ",", "num"}], "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+     RowBox[{"vltr", " ", "=", " ", 
+      RowBox[{"Transpose", "[", "val", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"outtr", " ", "=", " ", 
+      RowBox[{"Take", "[", 
+       RowBox[{"vltr", ",", "2"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"alg", " ", "=", " ", 
+         RowBox[{"algs", "[", 
+          RowBox[{"[", "k", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"tgtsts", " ", "=", " ", 
+         RowBox[{"vltr", "[", 
+          RowBox[{"[", 
+           RowBox[{"k", "+", "2"}], "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"seats", " ", "=", " ", 
+         RowBox[{"Total", "[", "tgtsts", "]"}]}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"res", " ", "=", " ", 
+         RowBox[{
+          RowBox[{"ExampleAlgs", "[", "alg", "]"}], "[", 
+          RowBox[{"val", ",", "seats"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"rssrt", " ", "=", " ", 
+         RowBox[{"ConstantArray", "[", 
+          RowBox[{"Null", ",", "num"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"rssrt", "[", 
+            RowBox[{"[", 
+             RowBox[{"srcix", "[", 
+              RowBox[{"r", "[", 
+               RowBox[{"[", "1", "]"}], "]"}], "]"}], "]"}], "]"}], " ", "=", 
+           " ", "r"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"r", ",", "res"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"rstr", " ", "=", " ", 
+         RowBox[{"Transpose", "[", "rssrt", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"AppendTo", "[", 
+         RowBox[{"outtr", ",", "tgtsts"}], "]"}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"AppendTo", "[", 
+         RowBox[{"outtr", ",", 
+          RowBox[{"rstr", "[", 
+           RowBox[{"[", "3", "]"}], "]"}]}], "]"}]}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{"k", ",", " ", 
+         RowBox[{"Length", "[", "algs", "]"}]}], "}"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"name", ",", " ", "algs", ",", " ", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"Partition", "[", 
+          RowBox[{"#", ",", "2"}], "]"}], "&"}], " ", "/@", " ", 
+        RowBox[{"Transpose", "[", "outtr", "]"}]}]}], "}"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
  CellLabel->
-  "In[573]:=",ExpressionUUID->"e6567378-43de-4ec2-bff7-1eb28577b252"],
+  "In[284]:=",ExpressionUUID->"bf4fd4cc-c304-4060-a62f-5404b284af1f"],
 
 Cell[BoxData[
- RowBox[{"(*", " ", 
+ RowBox[{
+  RowBox[{"EvaluateExamples", "[", "]"}], " ", ":=", " ", 
+  RowBox[{"KeyValueMap", "[", 
+   RowBox[{"ExampleEvaluate", ",", "ExampleVotes"}], "]"}]}]], "Input",
+ CellLabel->
+  "In[270]:=",ExpressionUUID->"b3c891b7-c378-48d5-a5da-2e4555447122"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"EvaluateExamples", "[", "]"}]], "Input",
+ CellLabel->
+  "In[349]:=",ExpressionUUID->"09edcbfe-be4d-4593-8061-44f3946e4e07"],
+
+Cell[BoxData[
+ RowBox[{"{", 
   RowBox[{
-   RowBox[{"The", " ", "adjusted"}], "-", 
-   RowBox[{"divisor", " ", "methods"}]}], " ", "*)"}]], "Input",
+   RowBox[{"{", 
+    RowBox[{"\<\"EleW HA\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"DH\"\>", ",", "\<\"SL\"\>", ",", "\<\"MSL\"\>"}], "}"}], 
+     ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Yellow\"\>", ",", "47000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"4", ",", "4"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"White\"\>", ",", "16000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Red\"\>", ",", "15900"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Green\"\>", ",", "12000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Blue\"\>", ",", "6000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Pink\"\>", ",", "3100"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Wiki DH Old\"\>", ",", 
+     RowBox[{"{", "\<\"DH\"\>", "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "100"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"4", ",", "4"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "80"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "30"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"D\"\>", ",", "20"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"ElecW DH\"\>", ",", 
+     RowBox[{"{", "\<\"DH\"\>", "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "340000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "280000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "160000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"D\"\>", ",", "60000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"E\"\>", ",", "15000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Wiki SL Old\"\>", ",", 
+     RowBox[{"{", "\<\"SL\"\>", "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "53"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "24"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "23"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Elec SL\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"DH\"\>", ",", "\<\"SL\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "503"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"18", ",", "18"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"17", ",", "17"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "304"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"10", ",", "10"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"10", ",", "10"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "193"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Wiki DH SL\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"DH\"\>", ",", "\<\"SL\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "100000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"4", ",", "4"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "80000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "30000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"D\"\>", ",", "20000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Wiki HH\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"HH\"\>", ",", "\<\"DH\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Likud\"\>", ",", "985408"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"30", ",", "30"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"30", ",", "30"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Zionist Union\"\>", ",", "786313"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"24", ",", "24"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"24", ",", "24"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Joint List\"\>", ",", "446583"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"13", ",", "13"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"13", ",", "14"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Yesh Atid\"\>", ",", "371602"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"11", ",", "11"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"11", ",", "11"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Kulanu\"\>", ",", "315360"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"10", ",", "9"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"The Jewish Home\"\>", ",", "283910"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"8", ",", "8"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Shas\"\>", ",", "241613"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Yisrael Beiteinu\"\>", ",", "214906"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"United Torah Judaism\"\>", ",", "210143"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Meretz\"\>", ",", "165529"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"Wiki EleW LR\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"Hare\"\>", ",", "\<\"Droop\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Yellow\"\>", ",", "47000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"White\"\>", ",", "16000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Red\"\>", ",", "15800"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Green\"\>", ",", "12000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Blue\"\>", ",", "6100"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Pink\"\>", ",", "3100"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"EleW Ham\"\>", ",", 
+     RowBox[{"{", "\<\"Hare\"\>", "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Virginia\"\>", ",", "630560"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"11", ",", "11"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Massachusetts\"\>", ",", "475327"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"8", ",", "8"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Pennsylvania\"\>", ",", "432879"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"North Carolina\"\>", ",", "353523"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"New York\"\>", ",", "331589"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Maryland\"\>", ",", "278514"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Connecticut\"\>", ",", "236841"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"4", ",", "4"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"South Carolina\"\>", ",", "206236"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"New Jersey\"\>", ",", "179570"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"New Hampshire\"\>", ",", "141822"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Vermont\"\>", ",", "85533"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Georgia\"\>", ",", "70835"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Kentucky\"\>", ",", "68705"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Rhode Island\"\>", ",", "68446"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Delaware\"\>", ",", "55540"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"LbTx 1\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"Hare\"\>", ",", "\<\"HH\"\>", ",", "\<\"Jf\"\>", 
+       ",", "\<\"Ad\"\>", ",", "\<\"Wb\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Alpha\"\>", ",", "24000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Beta\"\>", ",", "56000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Gamma\"\>", ",", "28000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"3", ",", "3"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Delta\"\>", ",", "17000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"2", ",", "2"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Epsilon\"\>", ",", "65000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"Zeta\"\>", ",", "47000"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"4", ",", "4"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}]}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"LbTx 2\"\>", ",", 
+     RowBox[{"{", 
+      RowBox[{"\<\"Hare\"\>", ",", "\<\"Jf\"\>", ",", "\<\"Ad\"\>", 
+       ",", "\<\"Wb\"\>", ",", "\<\"HH\"\>"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"A\"\>", ",", "25010"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"15", ",", "15"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"16", ",", "16"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"15", ",", "15"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"15", ",", "15"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"15", ",", "15"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"B\"\>", ",", "8760"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"C\"\>", ",", "11590"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"7", ",", "7"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"D\"\>", ",", "9025"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"5", ",", "5"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"6", ",", "6"}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"\<\"E\"\>", ",", "15080"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"9", ",", "9"}], "}"}]}], "}"}]}], "}"}]}], "}"}]}], 
+  "}"}]], "Output",
  CellLabel->
-  "In[574]:=",ExpressionUUID->"0d5fb820-bb9a-4b82-9550-3b1caf2666d0"],
+  "Out[349]=",ExpressionUUID->"6d3408bb-5189-4c42-a385-7124ccf18db0"]
+}, Open  ]]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["European Parliament", "Section",ExpressionUUID->"cbfe4e37-e199-4085-949c-0d0e7496d512"],
+
+Cell["\<\
+Allocates seats for the European Parliament using different algorithms in an \
+attempt to reverse-engineer the algorithm, and it uses some additional \
+methods as a test of the code
+
+It handles the seat bonus in two different ways:
+0 - Seat bonus independent of the allocation
+1 - Seat bonus included as initial counts in the allocation
+
+It uses highest-averages D\[CloseCurlyQuote]Hondt and \
+Sainte-Lagu\[EDoubleDot], largest-remainders Hare, and adjusted-divisor \
+Webster\
+\>", "Text",ExpressionUUID->"7c0f9f99-1ff2-4e96-9a05-16bfc7be4e0c"],
 
 Cell[BoxData[
- RowBox[{"NamedAdjustedDivisors", "[", 
-  RowBox[{"\"\<Jefferson\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
+ RowBox[{
+  RowBox[{"EPTSort", "[", 
+   RowBox[{"indx_", ",", "res_"}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", "rsrt", "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"rsrt", " ", "=", " ", 
+      RowBox[{"ConstantArray", "[", 
+       RowBox[{"Null", ",", 
+        RowBox[{"Length", "[", "res", "]"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"rsrt", "[", 
+         RowBox[{"[", 
+          RowBox[{"indx", "[", 
+           RowBox[{"r", "[", 
+            RowBox[{"[", "1", "]"}], "]"}], "]"}], "]"}], "]"}], " ", "=", 
+        " ", "r"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"r", ",", "res"}], "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"Transpose", "[", "rsrt", "]"}], "[", 
+      RowBox[{"[", "3", "]"}], "]"}]}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Input",
  CellLabel->
-  "In[575]:=",ExpressionUUID->"d473d5ca-8498-4b3c-ac25-e455b9340bfd"],
+  "In[325]:=",ExpressionUUID->"94229f6e-dcb9-4482-b01d-0884094fe12e"],
 
 Cell[BoxData[
- RowBox[{"NamedAdjustedDivisors", "[", 
-  RowBox[{"\"\<Webster\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
+ RowBox[{
+  RowBox[{"EuroParlTest", "[", "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"MinSeats", " ", "=", " ", "6"}], ",", " ", 
+      RowBox[{"MaxSeats", " ", "=", " ", "96"}], ",", " ", "rawdata", ",", 
+      "Members", ",", "NMem", ",", "NumSeats", ",", "indx", ",", "Votes0", 
+      ",", "NumSeats0", ",", "MaxSeats0", ",", "res0", ",", "rr0", ",", 
+      "Votes1", ",", "NumSeats1", ",", "MaxSeats1", ",", "res1", ",", "rr1", 
+      ",", "res00", ",", "rr00", ",", "res01", ",", "rr01", ",", "res10", ",",
+       "rr10", ",", "res11", ",", "rr11", ",", "res20", ",", "rr20", ",", 
+      "res21", ",", "rr21"}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"rawdata", " ", "=", " ", 
+      RowBox[{"Import", "[", 
+       RowBox[{
+        RowBox[{"NotebookDirectory", "[", "]"}], " ", "<>", " ", 
+        "\"\<EU Parliament.txt\>\""}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Members", " ", "=", " ", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"StringTrim", "[", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+          RowBox[{"ToExpression", "[", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], "]"}], ",", 
+          RowBox[{"ToExpression", "[", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "3", "]"}], "]"}], "]"}]}], "}"}], "&"}], " ", "/@", 
+       " ", 
+       RowBox[{"StringSplit", "[", 
+        RowBox[{
+         RowBox[{"StringSplit", "[", 
+          RowBox[{"rawdata", ",", "\"\<\\n\>\""}], "]"}], ",", 
+         "\"\<\\t\>\""}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"NMem", " ", "=", " ", 
+      RowBox[{"Length", "[", "Members", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"NumSeats", " ", "=", " ", "0"}], ";", " ", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{"NumSeats", " ", "+=", " ", 
+        RowBox[{"mm", "[", 
+         RowBox[{"[", "3", "]"}], "]"}]}], ",", 
+       RowBox[{"{", 
+        RowBox[{"mm", ",", "Members"}], "}"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Do", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"indx", "[", 
+         RowBox[{"Members", "[", 
+          RowBox[{"[", 
+           RowBox[{"k", ",", "1"}], "]"}], "]"}], "]"}], " ", "=", " ", "k"}],
+        ",", " ", 
+       RowBox[{"{", 
+        RowBox[{"k", ",", "NMem"}], "}"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"First", " ", "test"}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"Votes0", " ", "=", " ", 
+      RowBox[{"AddInitial", "[", 
+       RowBox[{"Members", ",", "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"NumSeats0", " ", "=", " ", 
+      RowBox[{"NumSeats", " ", "-", " ", 
+       RowBox[{"NMem", "*", "MinSeats"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"MaxSeats0", " ", "=", " ", 
+      RowBox[{"MaxSeats", " ", "-", " ", "MinSeats"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"res0", " ", "=", " ", 
+      RowBox[{"HighestAverages", "[", 
+       RowBox[{
+        RowBox[{"HADivisors", "[", "\"\<DHondt\>\"", "]"}], ",", "Votes0", 
+        ",", "NumSeats0", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats0"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr0", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"EPTSort", "[", 
+        RowBox[{"indx", ",", "res0"}], "]"}], " ", "+", " ", "MinSeats"}]}], 
+     ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Second", " ", "test"}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"Votes1", " ", "=", " ", 
+      RowBox[{"AddInitial", "[", 
+       RowBox[{"Members", ",", "MinSeats"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"NumSeats1", " ", "=", " ", "NumSeats"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"MaxSeats1", " ", "=", " ", "MaxSeats"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"res1", " ", "=", "  ", 
+      RowBox[{"HighestAverages", "[", 
+       RowBox[{
+        RowBox[{"HADivisors", "[", "\"\<DHondt\>\"", "]"}], ",", "Votes1", 
+        ",", "NumSeats1", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats1"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr1", " ", "=", " ", 
+      RowBox[{"EPTSort", "[", 
+       RowBox[{"indx", ",", "res1"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Extra", " ", "tests"}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{"res00", " ", "=", " ", 
+      RowBox[{"HighestAverages", "[", 
+       RowBox[{
+        RowBox[{"HADivisors", "[", "\"\<SainteLague\>\"", "]"}], ",", 
+        "Votes0", ",", "NumSeats0", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats0"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr00", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"EPTSort", "[", 
+        RowBox[{"indx", ",", "res00"}], "]"}], " ", "+", " ", "MinSeats"}]}], 
+     ";", "\[IndentingNewLine]", 
+     RowBox[{"res01", " ", "=", "  ", 
+      RowBox[{"HighestAverages", "[", 
+       RowBox[{
+        RowBox[{"HADivisors", "[", "\"\<SainteLague\>\"", "]"}], ",", 
+        "Votes1", ",", "NumSeats1", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats1"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr01", " ", "=", " ", 
+      RowBox[{"EPTSort", "[", 
+       RowBox[{"indx", ",", "res01"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"res10", " ", "=", " ", 
+      RowBox[{"LargestRemainders", "[", 
+       RowBox[{
+        RowBox[{"LRQuotaAdjust", "[", "\"\<Hare\>\"", "]"}], ",", "Members", 
+        ",", "NumSeats0", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats0"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr10", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"EPTSort", "[", 
+        RowBox[{"indx", ",", "res10"}], "]"}], " ", "+", " ", "MinSeats"}]}], 
+     ";", "\[IndentingNewLine]", 
+     RowBox[{"res11", " ", "=", " ", 
+      RowBox[{"LargestRemainders", "[", 
+       RowBox[{
+        RowBox[{"LRQuotaAdjust", "[", "\"\<Hare\>\"", "]"}], ",", "Members", 
+        ",", "NumSeats1", ",", 
+        RowBox[{"\"\<MinSeats\>\"", "->", "MinSeats"}], ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats1"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr11", " ", "=", " ", 
+      RowBox[{"EPTSort", "[", 
+       RowBox[{"indx", ",", "res11"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"res20", " ", "=", " ", 
+      RowBox[{"AdjustDivisor", "[", 
+       RowBox[{
+        RowBox[{"ADRounding", "[", "\"\<Webster\>\"", "]"}], ",", "Members", 
+        ",", "NumSeats0", ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats0"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr20", " ", "=", " ", 
+      RowBox[{
+       RowBox[{"EPTSort", "[", 
+        RowBox[{"indx", ",", "res20"}], "]"}], " ", "+", " ", "MinSeats"}]}], 
+     ";", "\[IndentingNewLine]", 
+     RowBox[{"res21", " ", "=", " ", 
+      RowBox[{"LargestRemainders", "[", 
+       RowBox[{
+        RowBox[{"ADRounding", "[", "\"\<Webster\>\"", "]"}], ",", "Members", 
+        ",", "NumSeats1", ",", 
+        RowBox[{"\"\<MinSeats\>\"", "->", "MinSeats"}], ",", 
+        RowBox[{"\"\<MaxSeats\>\"", "->", "MaxSeats1"}]}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"rr21", " ", "=", " ", 
+      RowBox[{"EPTSort", "[", 
+       RowBox[{"indx", ",", "res21"}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"(*", " ", 
+      RowBox[{"Collection", " ", "of", " ", "results"}], " ", "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"Transpose", "[", 
+      RowBox[{"Join", "[", 
+       RowBox[{
+        RowBox[{"Transpose", "[", "Members", "]"}], ",", 
+        RowBox[{"{", 
+         RowBox[{
+         "rr0", ",", "rr1", ",", "rr00", ",", "rr01", ",", "rr10", ",", 
+          "rr11", ",", "rr20", ",", "rr11"}], "}"}]}], "]"}], "]"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
  CellLabel->
-  "In[576]:=",ExpressionUUID->"f153a32d-3cfb-4064-93da-2758aa90b50e"],
-
-Cell[BoxData[
- RowBox[{"NamedAdjustedDivisors", "[", 
-  RowBox[{"\"\<Adams\>\"", ",", 
-   RowBox[{"AddInitial", "[", 
-    RowBox[{"SampleVotes", "[", "\"\<LR\>\"", "]"}], "]"}], ",", "10"}], 
-  "]"}]], "Input",
- CellLabel->
-  "In[577]:=",ExpressionUUID->"08c33de1-06c9-437f-a949-487d7b36ddc2"]
+  "In[359]:=",ExpressionUUID->"ff48adff-b9fd-488c-899f-af4fee6b373f"]
 }, Closed]]
 },
-WindowSize->{808, 695},
-WindowMargins->{{Automatic, 183}, {Automatic, 87}},
-FrontEndVersion->"12.2 for Mac OS X x86 (64-bit) (December 12, 2020)",
+WindowSize->{801, 695},
+WindowMargins->{{Automatic, 165}, {Automatic, 34}},
+FrontEndVersion->"13.3 for Mac OS X x86 (64-bit) (June 3, 2023)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"c44a8829-9bfc-4f9f-bdbd-ea636b57e79d"
 ]
@@ -1292,80 +2943,68 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 2845, 74, 1415, "Text",ExpressionUUID->"7cc5ef2e-1b50-4136-b628-85f62c2498fb"],
+Cell[558, 20, 5868, 94, 3117, "Text",ExpressionUUID->"7cc5ef2e-1b50-4136-b628-85f62c2498fb"],
 Cell[CellGroupData[{
-Cell[3428, 98, 84, 0, 67, "Section",ExpressionUUID->"27c684ec-503b-4d7c-85df-90cd522b04c4"],
+Cell[6451, 118, 84, 0, 67, "Section",ExpressionUUID->"27c684ec-503b-4d7c-85df-90cd522b04c4"],
+Cell[6538, 120, 411, 9, 52, "Input",ExpressionUUID->"2d43ab61-db33-419c-bd1d-ba1f49385b7e"],
+Cell[6952, 131, 491, 14, 30, "Input",ExpressionUUID->"7e0d560f-ae79-438e-a95d-a27682c25102"],
 Cell[CellGroupData[{
-Cell[3537, 102, 99, 0, 54, "Subsection",ExpressionUUID->"a17458bb-177d-4c1c-90fe-5c26812c364f"],
-Cell[3639, 104, 303, 6, 54, "Input",ExpressionUUID->"804c55aa-f7c1-45af-b1db-7db2b6efe1d8"],
-Cell[3945, 112, 459, 14, 32, "Input",ExpressionUUID->"05e33064-1998-4545-ac0c-08fc5fb3fd30"],
-Cell[4407, 128, 687, 21, 54, "Input",ExpressionUUID->"3865bbe4-51dd-4867-8be3-413f78658f51"],
-Cell[5097, 151, 1071, 31, 96, "Input",ExpressionUUID->"417ab718-7c36-4f97-9073-94010a66f124"]
+Cell[7468, 149, 120, 0, 54, "Subsection",ExpressionUUID->"a17458bb-177d-4c1c-90fe-5c26812c364f"],
+Cell[7591, 151, 298, 5, 52, "Input",ExpressionUUID->"804c55aa-f7c1-45af-b1db-7db2b6efe1d8"],
+Cell[7892, 158, 480, 13, 30, "Input",ExpressionUUID->"05e33064-1998-4545-ac0c-08fc5fb3fd30"],
+Cell[8375, 173, 682, 20, 52, "Input",ExpressionUUID->"3865bbe4-51dd-4867-8be3-413f78658f51"],
+Cell[9060, 195, 339, 8, 30, "Input",ExpressionUUID->"06551c3c-3c72-46ca-8238-cc114e72b287"],
+Cell[9402, 205, 8192, 185, 955, "Input",ExpressionUUID->"417ab718-7c36-4f97-9073-94010a66f124"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[6205, 187, 93, 0, 38, "Subsection",ExpressionUUID->"04bbef74-0346-48ec-ae16-fb80a636c0cd"],
-Cell[6301, 189, 3432, 95, 264, "Input",ExpressionUUID->"abba2cc9-a5ba-4ebc-9a87-fc5562fce551"],
-Cell[9736, 286, 374, 9, 32, "Input",ExpressionUUID->"c585301d-6ecc-4471-aece-9dffdf73608a"],
-Cell[10113, 297, 306, 8, 32, "Input",ExpressionUUID->"a9318cca-81ed-4ff1-927a-2d4956269e33"],
-Cell[10422, 307, 300, 8, 32, "Input",ExpressionUUID->"4ea13b77-673b-4f6b-b2fd-70ae2dea9b7a"],
-Cell[10725, 317, 305, 8, 32, "Input",ExpressionUUID->"06a0a570-94c6-4887-91cc-778a2c76684b"],
-Cell[11033, 327, 382, 10, 54, "Input",ExpressionUUID->"08f393f5-4cb2-4831-8b92-6f9479915226"],
-Cell[11418, 339, 299, 8, 32, "Input",ExpressionUUID->"d3f76964-54e9-4d4b-8712-6c03aaea43ba"],
-Cell[11720, 349, 302, 8, 32, "Input",ExpressionUUID->"813d10bb-df5a-49d3-a55e-b64a10afd6f8"],
-Cell[12025, 359, 341, 10, 32, "Input",ExpressionUUID->"217ac0ac-9436-4592-8e89-ab0339b7a536"],
-Cell[12369, 371, 367, 9, 54, "Input",ExpressionUUID->"d2f55944-dbd1-4ba6-b96b-79a9614a57bc"],
-Cell[12739, 382, 387, 10, 54, "Input",ExpressionUUID->"c7fac342-50cd-4140-b6f0-74969f6838b7"]
+Cell[17631, 395, 93, 0, 38, "Subsection",ExpressionUUID->"04bbef74-0346-48ec-ae16-fb80a636c0cd"],
+Cell[17727, 397, 272, 6, 30, "Input",ExpressionUUID->"969128f3-a1db-4b8d-b70e-916f6f1842f5"],
+Cell[18002, 405, 9158, 215, 976, "Input",ExpressionUUID->"2074234d-bd16-403b-a2c0-81f6d141f015"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[13163, 397, 94, 0, 38, "Subsection",ExpressionUUID->"3ba82c18-195f-4dbb-b706-bbe857481ad5"],
-Cell[13260, 399, 5956, 152, 766, "Input",ExpressionUUID->"73db3f48-8969-466a-bf50-43bea29d762e"],
-Cell[19219, 553, 210, 6, 30, "Input",ExpressionUUID->"3d2265e2-5306-4f04-8a63-f73232dd24e3"],
-Cell[19432, 561, 211, 6, 30, "Input",ExpressionUUID->"5166aa94-2963-4af4-af4d-9d257ad27ecb"],
-Cell[19646, 569, 215, 6, 30, "Input",ExpressionUUID->"15aabff9-793b-4b91-a9b2-2d7a00f25405"],
-Cell[19864, 577, 381, 10, 52, "Input",ExpressionUUID->"03a224ef-31ed-44da-bcc7-2557abcf7714"],
-Cell[20248, 589, 269, 7, 30, "Input",ExpressionUUID->"9c6c548f-5918-4ad5-9a93-8143932378d8"]
+Cell[27197, 625, 102, 0, 38, "Subsection",ExpressionUUID->"bec2a1be-d11c-4d37-b0ee-29cdec6ef4b0"],
+Cell[27302, 627, 302, 7, 30, "Input",ExpressionUUID->"0e950fb2-b164-4a27-9193-87d59226192c"],
+Cell[27607, 636, 393, 10, 52, "Input",ExpressionUUID->"b6af4327-4047-43aa-8ab5-37344e1ee3d9"],
+Cell[28003, 648, 3118, 92, 241, "Input",ExpressionUUID->"5fb2a1ad-ce1c-4e9b-be57-4e4ac9d985eb"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[20554, 601, 94, 0, 38, "Subsection",ExpressionUUID->"9a780722-3b84-448a-acaa-0c020c186743"],
-Cell[20651, 603, 1257, 35, 115, "Input",ExpressionUUID->"cbcd36f9-f618-4758-8503-d8405f19ffa2"],
-Cell[21911, 640, 792, 25, 52, "Input",ExpressionUUID->"80f557d6-41c9-4a58-8c3d-9bfc82314e33"],
-Cell[22706, 667, 10165, 236, 1543, "Input",ExpressionUUID->"402b2ddb-8e6c-49f3-9c0c-6e61d262f28e"],
-Cell[32874, 905, 231, 6, 30, "Input",ExpressionUUID->"e86069c3-f79d-436f-9153-09e8960300af"],
-Cell[33108, 913, 213, 6, 30, "Input",ExpressionUUID->"031aa098-e6d7-409c-9648-5634c108fe66"],
-Cell[33324, 921, 211, 6, 30, "Input",ExpressionUUID->"330f884c-5eb1-452b-9f54-67ec745e2904"],
-Cell[33538, 929, 381, 10, 52, "Input",ExpressionUUID->"01d9ca3d-9eac-4f73-bf34-450735cbc99d"],
-Cell[33922, 941, 277, 8, 30, "Input",ExpressionUUID->"6d3ddb2a-fb67-458e-8f2b-c8066ecee510"]
+Cell[31158, 745, 95, 0, 38, "Subsection",ExpressionUUID->"3ba82c18-195f-4dbb-b706-bbe857481ad5"],
+Cell[31256, 747, 347, 9, 30, "Input",ExpressionUUID->"092cbb85-aeee-4e24-b05a-ca8c3e9e0db0"],
+Cell[31606, 758, 13598, 310, 1480, "Input",ExpressionUUID->"4cc1cbcd-ffd2-4763-aef3-bdff6dac0f56"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[45241, 1073, 113, 0, 38, "Subsection",ExpressionUUID->"d49ed494-3b3f-45e4-b1db-b0cc2647fb9a"],
+Cell[45357, 1075, 597, 16, 94, "Input",ExpressionUUID->"89e29da0-26e5-42dd-899e-ed8f183590b4"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[45991, 1096, 93, 0, 38, "Subsection",ExpressionUUID->"9a780722-3b84-448a-acaa-0c020c186743"],
+Cell[46087, 1098, 426, 8, 52, "Input",ExpressionUUID->"49a0f8df-2a98-41a2-983c-70103bb9e754"],
+Cell[46516, 1108, 424, 8, 52, "Input",ExpressionUUID->"24e8b8a3-033d-4d08-a493-29548a5fd9ed"],
+Cell[46943, 1118, 3087, 73, 472, "Input",ExpressionUUID->"cfa681f3-a19d-400f-921c-23b9cfa91248"],
+Cell[50033, 1193, 343, 9, 30, "Input",ExpressionUUID->"32b2d65f-ed0b-4baa-a56c-9fa987dfb8da"],
+Cell[50379, 1204, 15732, 354, 1942, "Input",ExpressionUUID->"3e88b444-5785-4137-b78d-a8287cc3b521"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[66148, 1563, 112, 0, 38, "Subsection",ExpressionUUID->"01e88c91-e619-4154-afdf-1f5f9d34d174"],
+Cell[66263, 1565, 603, 16, 94, "Input",ExpressionUUID->"ba1c6e10-eb53-4964-87eb-bd5cd946dde9"]
 }, Closed]]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[34248, 955, 82, 0, 53, "Section",ExpressionUUID->"fa94d2d5-c959-48ae-be6e-0b6f7c01e95f"],
-Cell[34333, 957, 207, 5, 30, "Input",ExpressionUUID->"2bcbb793-1191-45bb-a9d4-dc4c136da167"],
-Cell[34543, 964, 541, 15, 30, "Input",ExpressionUUID->"5a3cc09a-e7bd-4a07-8717-c0df9d60ccc2"],
-Cell[35087, 981, 430, 11, 52, "Input",ExpressionUUID->"5609c4a3-cebc-4c5a-8729-ab22d9129598"],
-Cell[35520, 994, 293, 7, 30, "Input",ExpressionUUID->"099a8dd0-de03-418b-afb5-ded6f79d30b3"],
-Cell[35816, 1003, 207, 5, 30, "Input",ExpressionUUID->"945fd6df-2a5a-4bc5-bb14-9d7055e09ebd"],
-Cell[36026, 1010, 463, 13, 30, "Input",ExpressionUUID->"6061cd2f-0074-4bb6-b984-638e186cadb7"],
-Cell[36492, 1025, 397, 10, 52, "Input",ExpressionUUID->"3278d4f9-9504-45ba-8e6c-0fbab4385142"],
-Cell[36892, 1037, 298, 7, 30, "Input",ExpressionUUID->"94d37b55-dd84-4c44-b096-e80f6abc0de9"],
-Cell[37193, 1046, 273, 7, 30, "Input",ExpressionUUID->"113d3a59-1aeb-4e28-9502-207e02571c6c"],
-Cell[37469, 1055, 733, 20, 52, "Input",ExpressionUUID->"99535f53-f48c-4e32-afc6-4652eff24cd4"],
-Cell[38205, 1077, 530, 13, 73, "Input",ExpressionUUID->"9671c48c-b1c0-49f0-81c8-81ed0b8a3abc"],
-Cell[38738, 1092, 294, 7, 30, "Input",ExpressionUUID->"eba7ade0-3612-4f89-8b1c-9e38a16d38de"],
-Cell[39035, 1101, 536, 13, 73, "Input",ExpressionUUID->"b3b0ca63-234d-443c-8f0e-dfb06b25bc6a"],
-Cell[39574, 1116, 299, 7, 30, "Input",ExpressionUUID->"ca700244-b90a-43e4-8003-d4ac260db210"],
-Cell[39876, 1125, 569, 14, 73, "Input",ExpressionUUID->"f44b2528-0030-4f6a-958d-7401c71fac57"],
-Cell[40448, 1141, 308, 7, 52, "Input",ExpressionUUID->"1915c275-086a-48b2-a33b-571c5663ba07"],
-Cell[40759, 1150, 273, 7, 30, "Input",ExpressionUUID->"07cd8e90-7df2-45a3-863c-a33baf17ef40"],
-Cell[41035, 1159, 733, 20, 52, "Input",ExpressionUUID->"915be76e-8558-4f38-a9dc-42f7a5ef6a51"],
-Cell[41771, 1181, 559, 14, 73, "Input",ExpressionUUID->"94dbd59b-1b33-4e38-8a6a-429e66f99b19"],
-Cell[42333, 1197, 292, 7, 30, "Input",ExpressionUUID->"c35acc68-3c0b-4575-8ac3-a2822859f850"],
-Cell[42628, 1206, 560, 14, 73, "Input",ExpressionUUID->"37f51bd3-fa52-4eb9-9fbd-302ea0f836cf"],
-Cell[43191, 1222, 293, 7, 30, "Input",ExpressionUUID->"bf9a6d42-f325-48c2-9142-2733e86589c8"],
-Cell[43487, 1231, 289, 8, 30, "Input",ExpressionUUID->"e6567378-43de-4ec2-bff7-1eb28577b252"],
-Cell[43779, 1241, 236, 6, 30, "Input",ExpressionUUID->"0d5fb820-bb9a-4b82-9550-3b1caf2666d0"],
-Cell[44018, 1249, 297, 7, 30, "Input",ExpressionUUID->"d473d5ca-8498-4b3c-ac25-e455b9340bfd"],
-Cell[44318, 1258, 295, 7, 30, "Input",ExpressionUUID->"f153a32d-3cfb-4064-93da-2758aa90b50e"],
-Cell[44616, 1267, 293, 7, 30, "Input",ExpressionUUID->"08c33de1-06c9-437f-a949-487d7b36ddc2"]
+Cell[66915, 1587, 82, 0, 53, "Section",ExpressionUUID->"fa94d2d5-c959-48ae-be6e-0b6f7c01e95f"],
+Cell[67000, 1589, 3697, 101, 283, "Input",ExpressionUUID->"88d0d92b-670b-4052-9837-debab45308a9"],
+Cell[70700, 1692, 8905, 245, 766, "Input",ExpressionUUID->"ece0914b-ca63-4259-a64f-64bb70618b92"],
+Cell[79608, 1939, 3784, 97, 430, "Input",ExpressionUUID->"bf4fd4cc-c304-4060-a62f-5404b284af1f"],
+Cell[83395, 2038, 268, 6, 30, "Input",ExpressionUUID->"b3c891b7-c378-48d5-a5da-2e4555447122"],
+Cell[CellGroupData[{
+Cell[83688, 2048, 147, 3, 30, "Input",ExpressionUUID->"09edcbfe-be4d-4593-8061-44f3946e4e07"],
+Cell[83838, 2053, 21638, 630, 833, "Output",ExpressionUUID->"6d3408bb-5189-4c42-a385-7124ccf18db0"]
+}, Open  ]]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[105525, 2689, 93, 0, 53, "Section",ExpressionUUID->"cbfe4e37-e199-4085-949c-0d0e7496d512"],
+Cell[105621, 2691, 554, 12, 196, "Text",ExpressionUUID->"7c0f9f99-1ff2-4e96-9a05-16bfc7be4e0c"],
+Cell[106178, 2705, 1027, 29, 115, "Input",ExpressionUUID->"94229f6e-dcb9-4482-b01d-0884094fe12e"],
+Cell[107208, 2736, 8116, 189, 976, "Input",ExpressionUUID->"ff48adff-b9fd-488c-899f-af4fee6b373f"]
 }, Closed]]
 }
 ]
