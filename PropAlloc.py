@@ -140,7 +140,7 @@ def AddRoundedDown(Votes, NumSeats, *, MinSeats=0, MaxSeats=None):
 				SeatSum -= VS[2]
 		
 		# If no in-range ones, then use this result:
-		if SeatSum <= 0: return VoteSeats
+		if SeatSum <= 0: break
 		
 		# Find the rounded-down number of seats
 		# for every in-range one
@@ -162,11 +162,13 @@ def AddRoundedDown(Votes, NumSeats, *, MinSeats=0, MaxSeats=None):
 			if VS[3] == 0: NumIRMems += 1
 		
 		# If none, then one cannot continue
-		if NumIRMems == 0: return VoteSeats
+		if NumIRMems == 0: break
 		
 		# If no change, then accept the result
-		if NumIRMems == PrevNumIRMems: return VoteSeats
+		if NumIRMems == PrevNumIRMems: break
 		PrevNumIRMems = NumIRMems
+	
+	return VoteSeats
 		
 		
 # All methods: shared functions
@@ -292,7 +294,7 @@ def LargestRemainders(QuotaAdjust, Votes, NumSeats, *, MinSeats=0, MaxSeats=None
 				SeatSum -= VS[2]
 		
 		# If no in-range ones, then use this result:
-		if SeatSum <= 0: return VoteSeats
+		if SeatSum <= 0: break
 		
 		# Find the rounded-down number of seats
 		# and also the remainders
@@ -315,8 +317,7 @@ def LargestRemainders(QuotaAdjust, Votes, NumSeats, *, MinSeats=0, MaxSeats=None
 		
 		RemainingSeats = NumSeats
 		for VS in VoteSeats:
-			if VS[3] == 0:
-				RemainingSeats -= VS[2]
+			RemainingSeats -= VS[2]
 		
 		VoteSeats.sort(key=SortKeyLR)
 		
@@ -347,20 +348,21 @@ def LargestRemainders(QuotaAdjust, Votes, NumSeats, *, MinSeats=0, MaxSeats=None
 	VoteSeats.sort(key=SortKeyFinal)
 	return [VS[:4] for VS in VoteSeats]
 
+
 LR_QuotaAdjust = {}
 LR_QuotaAdjust["Hare"] = 0
 LR_QuotaAdjust["Droop"] = 1
 LR_QuotaAdjust["Imperiali"] = 2
 
 
-# Adjusted-divisor method
-# Tries divisors until one of them gets the right number of seats
-# VList members: name, votes, initial seats, calculated seats
+# Adjusted-divisor method.
+# It tries divisors until one of them gets the right number of seats.
 def CountSeatsForDivisor(VoteSeats, Divisor, RoundFunc, MinSeats, MaxSeats):
 	
 	# Maximum number of seats present?
 	IsMax = MaxSeats != None
 	
+	# Overwrites VoteSeats as it counts allocated seats
 	AllocatedSeats = 0
 	DvsrRecip = 1./Divisor
 	for VS in VoteSeats:
@@ -440,7 +442,7 @@ def AdjustDivisor(RoundDir, Votes, NumSeats, *, MinSeats=0, MaxSeats=None):
 				break
 			
 			# Are all elements at minimum?
-			DirMax = 1
+			DirMax = -1
 			for VS in VoteSeats: DirMax = max(DirMax,VS[3])
 			if DirMax == -1: break
 				
@@ -487,8 +489,7 @@ def AdjustDivisor(RoundDir, Votes, NumSeats, *, MinSeats=0, MaxSeats=None):
 		
 		# Interval too small?
 		if abs(Dvsr2 - Dvsr1)/(Dvsr1 + Dvsr2) < 1e-8:
-			VoteSeats.sort(key=SortKeyFinal)
-			return VoteSeats
+			break
 		
 		if DvsrSeats > NumSeats:
 			# Divisor too small
@@ -502,8 +503,11 @@ def AdjustDivisor(RoundDir, Votes, NumSeats, *, MinSeats=0, MaxSeats=None):
 			DvsrSeats = DvsrSeats
 		else:
 			# Equal
-			VoteSeats.sort(key=SortKeyFinal)
-			return VoteSeats
+			break
+	
+	# Finally
+	VoteSeats.sort(key=SortKeyFinal)
+	return VoteSeats
 		
 
 AD_Rounding = {}

@@ -15,7 +15,7 @@
 # 2020: House 435 Senate 100
 
 import sys
-from PropAlloc import HighestAverages, HA_Divisors, AddInitial
+from PropAlloc import HighestAverages, HA_Divisors, AddInitial, AddRoundedDown
 from PropAlloc import LargestRemainders, LR_QuotaAdjust
 from PropAlloc import AdjustDivisor, AD_Rounding
 
@@ -51,9 +51,9 @@ MethodList = (
 	("HA Sainte-Lague", \
 		lambda v, n, m: HighestAverages(HA_Divisors["SainteLague"], \
 			AddInitial(v,1), n, MaxSeats=m)),
-	("HA D'Hondt", \
+	("HA D'Hondt TopOff", \
 		lambda v, n, m: HighestAverages(HA_Divisors["DHondt"], \
-			AddInitial(v,1), n, MaxSeats=m)),
+			AddRoundedDown(v,n,MinSeats=1,MaxSeats=m), n, MaxSeats=m)),
 	("LR Hamilton", \
 		lambda v, n, m: LargestRemainders(LR_QuotaAdjust["Hare"], \
 			v, n, MinSeats=1, MaxSeats=m)),
