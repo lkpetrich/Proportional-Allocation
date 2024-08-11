@@ -9,9 +9,14 @@ import sys
 from PropAlloc import HighestAverages, HA_Divisors, AddInitial
 
 if len(sys.argv) <= 1:
-	print("Needs a US-state data file: (name, population, actual/estimated Rep count)")
+	print("Needs:")
+	print("US-state data file: (name, population, actual/estimated Rep count)")
+	print("(optional) average number of Senators per state (default: 2)")
+	print("(optional) maximum number of Senators per state (default: no limit)")
 	sys.exit()
 infile = sys.argv[1]
+RelNumSeats = int(sys.argv[2]) if len(sys.argv) > 2 else 2
+MaxSeats = int(sys.argv[3]) if len(sys.argv) > 3 else None
 
 
 # The data on states
@@ -42,21 +47,18 @@ for st, ab in StAbbrevs:
 # Will bake Huntington-Hill into the code,
 # since that is used by the House
 
-def DumpRes(NumSeats, MaxSeats=None):
-	res = HighestAverages(HA_Divisors["HuntingtonHill"], \
-		AddInitial(States,1), NumSeats, MaxSeats=MaxSeats)
-	StatesPerNum = {}
-	for r in res:
-		if r[2] not in StatesPerNum:
-			StatesPerNum[r[2]] = []
-		StatesPerNum[r[2]].append(NameToAbbrev[r[0]])
-	
-	for n in StatesPerNum:
-		StatesPerNum[n].sort()
-	
-	for n in sorted(StatesPerNum.keys(),reverse=True):
-		print(n,StatesPerNum[n])
 
-DumpRes(2*len(States))
-print()
-DumpRes(2*len(States),4)
+NumSeats = RelNumSeats*len(States)
+res = HighestAverages(HA_Divisors["HuntingtonHill"], \
+	AddInitial(States,1), NumSeats, MaxSeats=MaxSeats)
+StatesPerNum = {}
+for r in res:
+	if r[2] not in StatesPerNum:
+		StatesPerNum[r[2]] = []
+	StatesPerNum[r[2]].append(NameToAbbrev[r[0]])
+
+for n in StatesPerNum:
+	StatesPerNum[n].sort()
+
+for n in sorted(StatesPerNum.keys(),reverse=True):
+	print(n,' '.join(StatesPerNum[n]))

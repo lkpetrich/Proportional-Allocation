@@ -20,7 +20,10 @@ from PropAlloc import LargestRemainders, LR_QuotaAdjust
 from PropAlloc import AdjustDivisor, AD_Rounding
 
 if len(sys.argv) <= 1:
-	print("Needs a US-state data file: (name, population, actual/estimated Rep count)")
+	print("Needs:")
+	print("US-state data file: (name, population, actual/estimated Rep count)")
+	print("(optional) total number of Reps (default: total of actual/estimated)")
+	print("(optional) maximum number of Reps per state (default: no limit)")
 	sys.exit()
 infile = sys.argv[1]
 NumSeats = int(sys.argv[2]) if len(sys.argv) > 2 else None
