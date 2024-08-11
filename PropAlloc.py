@@ -7,55 +7,88 @@
 # for proportional allocation by population.
 #
 #
-# In these methods, Votes is a list of (party, # votes, initial # seats)
+# In these methods, Votes is a list of
+#   (party, # votes)
+# For highest averages, one needs initial numbers of seats:
+#   (party, # votes, # initial seats)
 #
-# AddInitial(Votes, Initial=0) takes a list of (party, # votes)
-# and adds Initial (default 0) seats to each
+# For highest averages, these are two convenience functions
+# for the initial number of seats:
 #
-# AddRoundedDown(Votes, Seats) takes a list of (party, # votes)
+# AddInitial(Votes, Initial=0)
+# and adds Initial (default 0) seats to each party
+#
+# AddRoundedDown(Votes, TotalSeats, MinSeats, MaxSeats)
 # and adds the rounded-down proportional number of seats to each
 #
+# Also in these methods,
+#   TotalSeats is the total number of seats to fill
+#   MinSeats is each party's minimum number of seats: specified as MinSeats=(value)
+#   MaxSeats is each party's maximum number of seats: specified as MaxSeats=(value)
 #
-# All these methods are called with (Votes, TotalSeats) unless indicated otherwise
+# Minimum and maximum values were implemented to make possible "degressive proportionality"
+# https://en.wikipedia.org/wiki/Degressive_proportionality
+# avoiding too little or too much representation for each party or region.
 #
 #
-# Highest averages:
-# D'Hondt, Sainte-Lague, Modified S-L, Huntington-Hill, Imperiali, Danish
+# The methods' output is a list of
+#   (party, # votes, # seats, direction relative to minimum and maximum, if present)
+# That direction:
+# -1: too small and forced to minimum, 0: unforced, +1: too large and forced to maximum
 #
-# HighestAverages(DivisorFunc, Votes, TotalSeats)
+# Highest averages methods:
+#
+# HighestAverages(DivisorFunc, Votes, TotalSeats, MaxSeats)
 # Uses a divisor function that returns a divisor for a number of seats
 #
-# HA_DHondt -- s + 1
-# HA_SainteLague -- 2s + 1
-# HA_ModifiedSainteLague -- 1.4 if s = 0 else (Sainte-Lague)
-# HA_Danish -- 3s + 1
-# HA_Imperiali -- s + 2
-# HA_HuntingtonHill -- sqrt(s*(s+1))
-# for s seats
+# HA_Divisors: an associative array
+#   Key: name of the divisor function
+#   Value: the divisor funcion
+# Key (name) -- value (function) of number of seats s
+# Adams, Cambridge -- s
+# Danish -- s + 1/3
+# Webster, SainteLague -- s + 1/2
+# ModifiedSainteLague -- 1.4 if s = 0 else (Sainte-Lague)
+# Hill, HuntingtonHill -- sqrt(s*(s+1))
+# SquareMean -- sqrt(s*(s+1) + 1/2)
+# Dean -- s*(s+1)/(s + 1/2)
+# Jefferson, DHondt -- s + 1
+# Imperiali -- s + 2
 #
 #
-# LargestRemainder(QuotaAdjust, Votes, TotalSeats)
+# LargestRemainder(QuotaAdjust, Votes, TotalSeats, MinSeats, MaxSeats)
+# LargestRemainders( (same args) )
 # Uses a quota adjustment for the total number of seats
+# 
 #
-# LR_Hare -- 0
-# LR_Droop -- 1
-# LR_Imperiali -- 2
+# LR_QuotaAdjust: an associative array
+#   Key: name, Value: quota-adjustment value
+# Hamilton, Hare -- 0
+# Droop -- 1
+# Imperiali -- 2
 #
 #
-# AdjustDivisor(RoundDir, Votes, TotalSeats)
+# AdjustDivisor(RoundDir, Votes, TotalSeats, MinSeats, MaxSeats)
+# AdjustedDivisor( (same args) )
 # Uses a roundoff direction (< 0: downward, = 0: nearest, > 0: upward)
 #
-# Jefferson, Webster, Adams
-# AD_Jefferson -- downward (-1)
-# AD_Webster -- nearest (0)
-# AD_Adams -- upward (1)
+# AD_Rounding: an associative array
+#   Key: name, Value: rounding direction
+# Jefferson -- downward (-1)
+# Webster -- nearest (0)
+# Adams -- upward (1)
 #
+# Examples is a collection of examples from these Wikipedia articles
+# and various referenced articles
 #
 # http://en.wikipedia.org/wiki/Highest_averages_method - Highest-averages method
 # http://en.wikipedia.org/wiki/D%27Hondt_method - D'Hondt method
 # http://en.wikipedia.org/wiki/Sainte-Lagu%C3%AB_method - Sainte-Lague method
 # http://en.wikipedia.org/wiki/Huntington-Hill_method - Huntington-Hill method
+#
 # http://en.wikipedia.org/wiki/Largest_remainder_method - Largest-remainder method
+#
+# Adjusted divisor:
 # https://math.libretexts.org/Bookshelves/Applied_Mathematics/Book%3A_College_Mathematics_for_Everyday_Life_(Inigo_et_al)/09%3A__Apportionment/9.02%3A_Apportionment_-_Jeffersons_Adamss_and_Websters_Methods
 # https://www.pnas.org/content/77/1/1 - The Webster method of apportionment
 #
@@ -66,14 +99,48 @@ from math import sqrt, floor, ceil
 # Add constant initial allocation:
 # Default is zero
 def AddInitial(Votes, Initial=0):
-	return [list(Vote[:2]) + [Initial] for Vote in Votes]
+	return [list(Vote[:2]) + [Initial, 0] for Vote in Votes]
 
 
 # Add the rounded-down number of votes: (total) / (Hare quota),
 # where (Hare quota) = (total) / (number of seats)
-def AddRoundedDown(Votes, Seats, MaxSeats=None):
-	Quota = sum((Vote[1] for Vote in Votes))/float(Seats)
-	return [list(Vote[:2]) + [int(Vote[1]/Quota)] for Vote in Votes]
+def AddRoundedDown(Votes, TotalSeats, *, MinSeats=None, MaxSeats=None):
+	IsMin = MinSeats != None
+	IsMax = MaxSeats != None
+	
+	VList = [list(Vote[:2]) + [0, 0] for Vote in Votes]
+	
+	while True:
+		# Count up the votes and the seats for all parties
+		# not forced to the minimum or maximum numbers of seats
+		VoteSum = 0
+		SeatSum = TotalSeats
+		for Vote in VList:
+			if Vote[3] == 0:
+				VoteSum += Vote[1]
+			else:
+				SeatSum -= Vote[2]
+		if SeatSum <= 0: break
+		
+		Quota = float(VoteSum)/float(SeatSum)
+		WentOutOfRange = False
+		
+		for Vote in VList:
+			if Vote[3] == 0:
+				IndNumSeats = int(Vote[1]/Quota)
+				if IsMin and IndNumSeats < MinSeats:
+					WentOutOfRange = True
+					IndNumSeats = MinSeats
+					Vote[3] = -1
+				elif IsMax and IndNumSeats > MaxSeats:
+					WentOutOfRange = True
+					IndNumSeats = MaxSeats
+					Vote[3] = 1
+				Vote[2] = IndNumSeats
+		
+		if not WentOutOfRange: break
+	
+	return VList
 
 # All methods: shared functions
 
@@ -85,38 +152,58 @@ def SortKeyFinal(a):
 
 # Highest-averages method
 
-def HighestAverages(DivisorFunc, Votes, TotalSeats, MaxSeats=None):
+def HighestAverages(DivisorFunc, Votes, TotalSeats, *, MaxSeats=None):
 	IsMax = MaxSeats != None
 	
-	# VList members have party, votes, seats, averages
-	# Adjust for maximum seats if present
-	MxStCeil = lambda V: min(V,MaxSeats) if IsMax else V
-	VtProc = lambda Vote: [Vote[0], Vote[1], MxStCeil(Vote[2])]
-	VList = [VtProc(Vote) for Vote in Votes]
-	VList = [Vote + [Vote[1]/DivisorFunc(Vote[2])] for Vote in VList]
+	# VList members have party, votes, seats, direction, averages
+	VList = [list(Vote[:3]) + [0, 0] for Vote in Votes]
+	
+	for Vote in VList:
+		if IsMax and Vote[2] > MaxSeats:
+			Vote[2] = MaxSeats
+			Vote[3] = 1
+	
+	# Available seats
 	RemainingSeats = TotalSeats
-	for Vote in VList: RemainingSeats -= Vote[2]
+	for Vote in VList:
+		if Vote[3] == 0:
+			Vote[4] = Vote[1]/float(DivisorFunc(Vote[2]))
+		RemainingSeats -= Vote[2]
 	
-	# Sort order: highest to lowest
-	# Average vote, total vote, name
-	SortKeyHA = lambda a: (-a[3],-a[1],a[0])
-	# Seats available overall?
+	if RemainingSeats <= 0:
+		return [Vote[:4] for Vote in sorted(VList,key=SortKeyFinal)]
+	
+	# Any seats remaining?
 	while RemainingSeats > 0:
-		VList.sort(key=SortKeyHA)
-		SeatAvail = False
-		for Vote in VList:
-			# Don't add a seat if at the individual limit
-			if IsMax and Vote[2] >= MaxSeats: continue
-			SeatAvail = True
+		# Find the highest average by index
+		ix = None
+		HighAvg = None
+		for k, Vote in enumerate(VList):
+			if Vote[3] == 0:
+				if ix == None:
+					ix = k
+					HighAvg = Vote[4]
+				elif Vote[4] > HighAvg:
+					ix = k
+					HighAvg = Vote[4]
+		
+		# All out of range?
+		if ix == None: break
+		
+		# The winner...
+		Vote = VList[ix]
+		# More than the maximum?
+		if IsMax and Vote[2] >= MaxSeats:
+			Vote[2] = MaxSeats
+			Vote[3] = 1
+		else:
+			# If not, then a seat to the winner
 			Vote[2] += 1
-			Vote[3] = Vote[1]/float(DivisorFunc(Vote[2]))
 			RemainingSeats -= 1
-			break
-		# No seats could be added
-		if not SeatAvail: break
+			Vote[4] = Vote[1]/float(DivisorFunc(Vote[2]))
 	
-	VList.sort(key=SortKeyFinal)
-	return [Vote[:3] for Vote in VList]
+	return [Vote[:4] for Vote in sorted(VList,key=SortKeyFinal)]
+
 
 def DifferentInitial(DivisorFunc, InitialValue, k):
 	if k == 0:
@@ -124,110 +211,139 @@ def DifferentInitial(DivisorFunc, InitialValue, k):
 	else:
 		return DivisorFunc(k)
 
-def Divisor_Linear(k, d1, d0=1):
-	return d0 + d1*k
+HA_Divisors = {}
 
-def Divisor_DHondt(k): return Divisor_Linear(k,1,1)
+HA_Divisors["Adams"] = lambda k: k + 0.
+HA_Divisors["Cambridge"] = HA_Divisors["Adams"]
 
-def Divisor_SainteLague(k): return Divisor_Linear(k,2,1)
+third = 1./3.
+HA_Divisors["Danish"] = lambda k: k + third
 
-def Divisor_ModifiedSainteLague(k):
-	return DifferentInitial(Divisor_SainteLague, 1.4, k)
+HA_Divisors["SainteLague"] = lambda k: k + 0.5
+HA_Divisors["Webster"] = HA_Divisors["SainteLague"]
 
-def Divisor_Danish(k): return Divisor_Linear(k,3,1)
+HA_Divisors["ModifiedSainteLague"] = lambda k: \
+	DifferentInitial(HA_Divisors["SainteLague"], 1.4, k)
 
-def Divisor_Imperiali(k): return Divisor_Linear(k,1,2)
+HA_Divisors["HuntingtonHill"] = lambda k: sqrt(k*(k+1.))
+HA_Divisors["Hill"] = HA_Divisors["HuntingtonHill"]
 
-def Divisor_HuntingtonHill(k): return sqrt(k*(k+1))
+HA_Divisors["SquareMean"] = lambda k: sqrt(k*(k+1.) + 0.5)
+HA_Divisors["Dean"] = lambda k: k*(k+1.)/(k + 0.5)
 
-def HA_DHondt(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_DHondt, Votes, TotalSeats, MaxSeats)
+HA_Divisors["DHondt"] = lambda k: k + 1.
+HA_Divisors["Jefferson"] = HA_Divisors["DHondt"]
 
-def HA_SainteLague(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_SainteLague, Votes, TotalSeats, MaxSeats)
-
-def HA_ModifiedSainteLague(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_ModifiedSainteLague, Votes, TotalSeats, MaxSeats)
-
-def HA_Danish(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_Danish, Votes, TotalSeats, MaxSeats)
-
-def HA_Imperiali(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_Imperiali, Votes, TotalSeats, MaxSeats)
-
-def HA_HuntingtonHill(Votes, TotalSeats, MaxSeats=None):
-	return HighestAverages(Divisor_HuntingtonHill, Votes, TotalSeats, MaxSeats)
+HA_Divisors["Imperiali"] = lambda k: k + 1.
 
 
 # Largest-remainder method
 
-def LargestRemainder(QuotaAdjust, Votes, TotalSeats, MaxSeats=None):
+def LargestRemainder(QuotaAdjust, Votes, TotalSeats, *, MinSeats=None, MaxSeats=None):
+	IsMin = MinSeats != None
 	IsMax = MaxSeats != None
 	
-	# VList members have party, votes, seats, remainders
-	VList = [list(Vote[:3]) for Vote in Votes]
-	TotalVote = sum((Vote[1] for Vote in VList))
-	Quota = TotalVote/float(TotalSeats + QuotaAdjust)
+	# VList members have party, votes, seats, direction, remainders
+	VList = [list(Vote[:2]) + [0, 0, 0] for Vote in Votes]
 	
-	# Sort order: highest to lowest
-	# Remainder, total, name
-	SortKeyLR = lambda a: (-a[3],-a[1],a[0])
-	# Find the remainders
-	for Vote in VList:
-		Seats = int(Vote[1]/Quota)
-		Seats = max(Seats, Vote[2])
-		Rmdr = Vote[1] - Quota*Seats
-		Vote[2] = Seats
-		Vote.append(Rmdr)
+	RemainingSeats = 0
 	
-	RemainingSeats = TotalSeats
-	for Vote in VList: RemainingSeats -= Vote[2]
+	SortKey = lambda a: (-a[4],-a[1],a[0])
+	
+	while True:
+		# Count up the votes and the seats for all parties
+		# not forced to the minimum or maximum numbers of seats
+		VoteSum = 0
+		SeatSum = TotalSeats
+		for Vote in VList:
+			if Vote[3] == 0:
+				VoteSum += Vote[1]
+			else:
+				SeatSum -= Vote[2]
+		if SeatSum <= 0: break
+		
+		Quota = float(VoteSum)/float(SeatSum + QuotaAdjust)
+		WentOutOfRange = False
+		
+		for Vote in VList:
+			if Vote[3] == 0:
+				IndNumSeats = int(Vote[1]/Quota)
+				if IsMin and IndNumSeats < MinSeats:
+					WentOutOfRange = True
+					IndNumSeats = MinSeats
+					Vote[3] = -1
+					Vote[4] = 0
+				elif IsMax and IndNumSeats > MaxSeats:
+					WentOutOfRange = True
+					IndNumSeats = MaxSeats
+					Vote[3] = 1
+					Vote[4] = 0
+				else:
+					Vote[4] = Vote[1] - Quota*IndNumSeats
+				Vote[2] = IndNumSeats
+		
+		VList.sort(key=SortKey)
+		
+		RemainingSeats = SeatSum
+		for Vote in VList:
+			if Vote[3] == 0:
+				RemainingSeats -= Vote[2]
+		if RemainingSeats < 0: break
+		
+		for Vote in VList:
+			if Vote[3] == 0:
+				if RemainingSeats == 0: break
+				if IsMax and Vote[2] >= MaxSeats:
+					WentOutOfRange = True
+					Vote[2] = MaxSeats
+					Vote[3] = 1
+					Vote[4] = 0
+				else:
+					Vote[2] += 1
+					RemainingSeats -= 1
+		
+		if not WentOutOfRange: break
 	
 	if RemainingSeats < 0:
-		# Bump up the quota and try again
-		return LargestRemainder(Votes, QuotaAdjust-1, TotalSeats)
+		return LargestRemainder(QuotaAdjust-1, Votes, TotalSeats, \
+			MinSeats=MinSeats, MaxSeats=MaxSeats)
 	
-	VList.sort(key=SortKeyLR)
-	
-	# Bump up the number of seats for the parties with the highest remainders
-	k = 0
-	while RemainingSeats > 0:
-		VList[k][2] += 1
-		RemainingSeats -= 1
-		# Next party; wrap around if necessary
-		k += 1
-		if k >= len(VList): k = 0
-	
-	VList.sort(key=SortKeyFinal)
-	return [Vote[:3] for Vote in VList]
-	
-def LR_Hare(Votes, TotalSeats, MaxSeats=None):
-	return LargestRemainder(0, Votes, TotalSeats, MaxSeats)
-	
-def LR_Droop(Votes, TotalSeats, MaxSeats=None):
-	return LargestRemainder(1, Votes, TotalSeats, MaxSeats)
-	
-def LR_Imperiali(Votes, TotalSeats, MaxSeats=None):
-	return LargestRemainder(2, Votes, TotalSeats, MaxSeats)
+	return [Vote[:4] for Vote in sorted(VList,key=SortKeyFinal)]
+
+
+def LargestRemainders(*args, **kwargs):
+	return LargestRemainder(*args, **kwargs)
+
+LR_QuotaAdjust = {"Hamilton": 0, "Hare": 0, "Droop": 1, "Imperiali": 2}
+
 
 # Adjusted-divisor method
 # Tries divisors until one of them gets the right number of seats
-# VList members: name, votes, initial seats, calculated seats
-def CountSeatsForDvsr(VList, Dvsr, Rndf):
+# VList members: name, votes, seats, direction
+def CountSeatsForDvsr(VList, Dvsr, Rndf, MinSeats, MaxSeats):
+	IsMin = MinSeats != None
+	IsMax = MaxSeats != None
+	
 	AllocSeats = 0
 	for Vote in VList:
-		Seats = max(Rndf(Vote[1]/Dvsr), Vote[2])
+		Seats = Rndf(Vote[1]/Dvsr)
+		if IsMin and Seats < MinSeats:
+			Seats = MinSeats
+			Vote[3] = -1
+		elif IsMax and Seats > MaxSeats:
+			Seats = MaxSeats
+			Vote[3] = 1
+		else:
+			Vote[3] = 0
+		Vote[2] = Seats
 		AllocSeats += Seats
-		Vote[3] = Seats
 	
 	return AllocSeats
 
-def AdjDvsrOutput(VList):
-	VLOut = [ [Vote[0], Vote[1], Vote[3]] for Vote in VList]
-	VLOut.sort(key=SortKeyFinal)
-	return VLOut
-
-def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
+def AdjustDivisor(RoundDir, Votes, TotalSeats, *, MinSeats=None, MaxSeats=None):
+	IsMin = MinSeats != None
+	IsMax = MaxSeats != None
+	
 	# Set the rounding function:
 	if RoundDir > 0:
 		rndf = ceil
@@ -236,15 +352,15 @@ def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
 	else:
 		rndf = round
 
-	# Members have party, votes, initial seats, calculated seats
-	VList = [list(Vote[:3]) + [0] for Vote in Votes]
+	# Members have party, votes, seats, direction
+	VList = [list(Vote[:2]) + [0, 0] for Vote in Votes]
+	
+	# Find the initial divisor
 	TotalVotes = 0
 	for Vote in VList:
 		TotalVotes += Vote[1]
-	
-	# Find the initial divisor
 	Dvsr = float(TotalVotes)/float(TotalSeats)
-	DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf)
+	DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf, MinSeats, MaxSeats)
 	
 	# Find the divisor-value bracket:
 	# divisor and number of seats 1 and 2
@@ -255,7 +371,7 @@ def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
 		DvsrSeats1 = DvsrSeats
 		while True:
 			Dvsr *= 2
-			DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf)
+			DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf, MinSeats, MaxSeats)
 			if DvsrSeats == TotalSeats:
 				VList.sort(key=SortKeyFinal)
 				return VList
@@ -268,7 +384,7 @@ def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
 		DvsrSeats2 = DvsrSeats
 		while True:
 			Dvsr /= 2
-			DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf)
+			DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf, MinSeats, MaxSeats)
 			if DvsrSeats == TotalSeats:
 				VList.sort(key=SortKeyFinal)
 				return VList
@@ -276,18 +392,20 @@ def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
 				Dvsr1 = Dvsr
 				DvsrSeats1 = DvsrSeats
 				break
-	else: 
-		return AdjDvsrOutput(VList)
+	else:
+		VList.sort(key=SortKeyFinal)
+		return VList
 	
 	# Find the next value with linear interpolation
 	while True:
 		Dvsr = Dvsr1 + (Dvsr2 - Dvsr1) * \
 			( float(TotalSeats - DvsrSeats1) / float(DvsrSeats2 - DvsrSeats1) )
-		DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf)
+		DvsrSeats = CountSeatsForDvsr(VList, Dvsr, rndf, MinSeats, MaxSeats)
 		
 		# Interval too small?
 		if abs(Dvsr2 - Dvsr1)/(Dvsr1 + Dvsr2) < 1e-8:
-			return AdjDvsrOutput(VList)
+			VList.sort(key=SortKeyFinal)
+			return VList
 		
 		if DvsrSeats > TotalSeats:
 			# Dvsr too small
@@ -300,119 +418,183 @@ def AdjustDivisor(RoundDir, Votes, TotalSeats, MaxSeats=None):
 			Dvsr2 = Dvsr
 			DvsrSeats = DvsrSeats
 		else:
-			return AdjDvsrOutput(VList)
+			VList.sort(key=SortKeyFinal)
+			return VList
+
+def AdjustedDivisor(*args, **kwargs):
+	return AdjustDivisor(*args, **kwargs)
+
+AD_Rounding = {"Jefferson": -1, "Webster": 0, "Adams": 1}
 
 
-def AD_Jefferson(Votes, TotalSeats, MaxSeats=None):
-	return AdjustDivisor(-1, Votes, TotalSeats, MaxSeats)
+# Examples
+Examples = {}
 
-def AD_Webster(Votes, TotalSeats, MaxSeats=None):
-	return AdjustDivisor(0, Votes, TotalSeats, MaxSeats)
+ExampleTargets = {}
 
-def AD_Adams(Votes, TotalSeats, MaxSeats=None):
-	return AdjustDivisor(1, Votes, TotalSeats, MaxSeats)
+# From Wikipedia's Highest-Averages article
+
+# Original: Jefferson, Webster
+Examples["WikiHA11"] = (("Yellow", 46_000), ("White", 25_000), ("Red", 12_210), \
+	("Green", 8_350), ("Purple", 8_340))
+
+ExampleTargets["WikiHA11"] = (21, {"HA-DHondt": (11,6,2,1,1), \
+	"HA-SainteLague": (9,5,3,2,2) } )
+
+# Original: Adams, Webster
+Examples["WikiHA12"] = (("Yellow", 55_000), ("White", 17_290), ("Red", 16_600), \
+	("Green", 5_560), ("Purple", 5_550))
+
+ExampleTargets["WikiHA12"] = (21, {"HA-Adams": (10,4,3,2,2), \
+	"HA-SainteLague": (11,4,4,1,1) } )
+
+# Original: Jefferson, Webster, Huntington-Hill, Adams
+Examples["WikiHA13"] = (("Yellow", 47_000), ("White", 16_000), ("Red", 15_900), \
+	("Green", 12_000), ("Blue", 6,000), ("Pink", 3_100))
+
+ExampleTargets["WikiHA13"] = (10, {"HA-DHondt": (5,2,2,1,0,0), \
+	"HA-SainteLague": (4,2,2,1,1,0), "HA-HuntingtonHill": (4,2,1,1,1,1), \
+	"HA-Adams": (3,2,2,1,1,1) } )
+
+# From Wikipedia's D'Hondt and Sainte-Lague articles
+Examples["WikiHA2"] = (('A',100_000), ('B',80_000), ('C',30_000), ('D',20_000))
+
+ExampleTargets["WikiHA2"] = (8, \
+	{"HA-DHondt": (4,3,1,0), "HA-SainteLague": (3,3,1,1) } )
+
+# From Wikipedia's Huntington-Hill article
+Examples["WikiHA3"] = (('A',100_000), ('B',80_000), ('C',30_000))
+
+ExampleTargets["WikiHA3"] = (8, {"HA-HuntingtonHill": (4,3,1) } )
+
+# Israel's Knesset, 2015 election of 20th one
+Examples["WikiHAKn"] = (("Likud",985_408), ("Zionist Union",786_313), \
+	("Joint List",446_583), ("Yesh Atid",371_602), ("Kulanu",315_360), \
+	("The Jewish Home",283_910), ("Shas",241_613), ("Yisrael Beiteinu",214_906), \
+	("United Torah Judaism",210_143), ("Meretz",165_529))
+
+ExampleTargets["WikiHAKn"] = (120, {"HA-HuntingtonHill": (30,24,13,11,9,9,7,6,6,5), \
+	"HA-DHondt": (30,24,13,11,10,8,7,6,6,5) } )
+
+# From Wikipedia's largest-remainders article
+Examples["WikiLR1"] = (("Yellow",47_000), ("White",16_000), ("Red",15_800), \
+		("Green",12_000), ("Blue",6_100), ("Pink",3_100))
+
+ExampleTargets["WikiLR1"] = (10, {"LR-Droop": (5, 2, 2, 1, 0, 0) } )
+
+Examples["WikiLR2"] = (('A',1500), ('B',1500), ('C',900), ('D',500), \
+	('E',500), ('F',200))
+
+ExampleTargets["WikiLR21"] = (25, {"LR-Hare": (7,7,4,3,3,1) } )
+
+ExampleTargets["WikiLR22"] = (26, {"LR-Hare": (8,8,5,2,2,1) } )
+
 
 # For debugging
 if __name__ == "__main__":
 	
-	# Example from a Wikipedia article
-	print("Highest-Averages D'Hondt")
-	VotesDH = (('A',100), ('B',80), ('C',30), ('D',20))
-	print("Target: A:4, B;3, C:1, D:0")
-	res = HA_DHondt(AddInitial(VotesDH), 8)
-	for r in res: print(r)
+	def HADH(vts,num):
+		return HighestAverages(HA_Divisors["DHondt"], AddInitial(vts), num)
 	
-	print
+	def HASL(vts,num):
+		return HighestAverages(HA_Divisors["SainteLague"], AddInitial(vts), num)
 	
-	# Example from a Wikipedia article
-	print("Highest-Averages Sainte-Lague")
-	VotesSL = (('A',53), ('B',24), ('C',23))
-	print("Target: A:3, B:2, C:2")
-	res = HA_SainteLague(AddInitial(VotesSL), 7)
-	for r in res: print(r)
+	def HAHH(vts,num):
+		return HighestAverages(HA_Divisors["HuntingtonHill"], AddInitial(vts,1), num)
 	
-	print
+	def HAAD(vts,num):
+		return HighestAverages(HA_Divisors["Adams"], AddInitial(vts,1), num)
 	
-	# Example from the Wikipedia article on highest-averages
-	VotesHA = (('Yellow',47000), ('White',16000), ('Red',15900), \
-		('Green',12000), ('Blue',6000), ('Pink',3100))
+	def LRHR(vts,num):
+		return LargestRemainder(LR_QuotaAdjust["Hare"], vts, num)
 	
-	print("Highest-Averages D'Hondt")
-	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
-	res = HA_DHondt(AddInitial(VotesHA), 10)
-	for r in res: print(r)
+	def LRDP(vts,num):
+		return LargestRemainder(LR_QuotaAdjust["Droop"], vts, num)
 	
-	print
+	MethodList = {"HA-DHondt": HADH, "HA-SainteLague": HASL, \
+		"HA-HuntingtonHill": HAHH, "HA-Adams": HAAD, \
+		"LR-Hare": LRHR, "LR-Droop": LRDP }
 	
-	print("Highest-Averages Sainte-Lague")
-	print("Target: Yellow:4, White:2, Red:2, Green:1, Blue:1, Pink:0")
-	res = HA_SainteLague(AddInitial(VotesHA), 10)
-	for r in res: print(r)
+	def ExampleEval(exname,etgname=None):
+		tgtname = exname if etgname == None else etgname
+		ex = Examples[exname]
+		tgt = ExampleTargets[tgtname]
+		num = tgt[0]
+		tvs = tgt[1]
+		print(exname, "-", num)
+		prt = tuple( (r[0] for r in ex) )
+		print(prt)
+		prt = tuple( (r[1] for r in ex) )
+		print(prt)
+		for mth in tvs:
+			print(mth)
+			print(tvs[mth])
+			res = MethodList[mth](ex,num)
+			prt = tuple( (r[2] for r in res) )
+			print(prt)
+		print()
+
+	ExampleEval("WikiHA11")
+	ExampleEval("WikiHA12")
+	ExampleEval("WikiHA13")	
+	ExampleEval("WikiHA2")
+	ExampleEval("WikiHA3")
+	ExampleEval("WikiHAKn")
+	ExampleEval("WikiLR1")
+	ExampleEval("WikiLR2","WikiLR21")
+	ExampleEval("WikiLR2","WikiLR22")
 	
-	print
+	# Tests of extended features: minimum, maximum numbers of seats
 	
-	print("Highest-Averages Modified Sainte-Lague")
-	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
-	res = HA_ModifiedSainteLague(AddInitial(VotesHA), 10)
-	for r in res: print(r)
+	# Test data to use
+	TestSet = Examples["WikiHA11"]
+	print(TestSet)
 	
-	print
+	# For ordering the results back into the order of the test set:
+	TSOrd = {}
+	for k, TS in enumerate(TestSet):
+		TSOrd[TS[0]] = k
+	def MakeTSOrd(res):
+		rsord = len(res)*[None]
+		for r in res:
+			rsord[TSOrd[r[0]]] = r
+		return rsord
 	
-	print("Highest-Averages Imperiali")
-	res = HA_Imperiali(AddInitial(VotesHA), 10)
-	for r in res: print(r)
+	def dumpout(res): print([r[2:] for r in MakeTSOrd(res)])
 	
-	print
+	print("Add Initial")
+	dumpout(AddInitial(TestSet,6))
 	
-	print("Highest-Averages Danish")
-	res = HA_Danish(AddInitial(VotesHA), 10)
-	for r in res: print(r)
+	print("Add Rounded Down")
+	dumpout(AddRoundedDown(TestSet,100))
+	dumpout(AddRoundedDown(TestSet,100,MaxSeats=30))
+	dumpout(AddRoundedDown(TestSet,100,MinSeats=15))
+	dumpout(AddRoundedDown(TestSet,100,MinSeats=15,MaxSeats=30))
 	
-	print
+	print("Highest Averages")
+	dvsrf = HA_Divisors["SainteLague"]
+	dumpout(HighestAverages(dvsrf, AddInitial(TestSet), 100))
+	dumpout(HighestAverages(dvsrf, AddInitial(TestSet), 100, MaxSeats=30))	
+	dumpout(HighestAverages(dvsrf, AddInitial(TestSet,15), 100))
+	dumpout(HighestAverages(dvsrf, AddInitial(TestSet,15), 100, MaxSeats=30))
 	
-	print("Rounded down, then d'Hondt")
-	res = HA_DHondt(AddRoundedDown(VotesHA, 10), 10)
-	for r in res: print(r)
+	print("Largest Remainders")
+	qtadj = LR_QuotaAdjust["Hare"]
+	dumpout(LargestRemainder(qtadj, TestSet, 100))
+	dumpout(LargestRemainder(qtadj, TestSet, 100, MaxSeats=30))	
+	dumpout(LargestRemainder(qtadj, TestSet, 100, MinSeats=15))
+	dumpout(LargestRemainder(qtadj, TestSet, 100, MinSeats=15, MaxSeats=30))
 	
-	print("Adjusted-Divisor Jefferson")
-	res = AD_Jefferson(AddInitial(VotesHA), 10)
-	for r in res: print(r)
-	
-	print
-	
-	print("Adjusted-Divisor Webster")
-	res = AD_Webster(AddInitial(VotesHA), 10)
-	for r in res: print(r)
-	
-	print
-	
-	print("Adjusted-Divisor Adams")
-	res = AD_Adams(AddInitial(VotesHA), 10)
-	for r in res: print(r)
-	
-	print
-	
-	# Example from the Wikipedia article on largest-remainder
-	VotesLR = (('Yellow',47000), ('White',16000), ('Red',15800), \
-		('Green',12000), ('Blue',6100), ('Pink',3100))
-	
-	print("Largest-Remainder Hare")
-	print("Target: Yellow:5, White:2, Red:1, Green:1, Blue:1, Pink:0")
-	res = LR_Hare(AddInitial(VotesLR), 10)
-	for r in res: print(r)
-	
-	print
-	
-	print("Largest-Remainder Droop")
-	res = LR_Droop(AddInitial(VotesLR), 10)
-	print("Target: Yellow:5, White:2, Red:2, Green:1, Blue:0, Pink:0")
-	for r in res: print(r)
-	
-	print
-	
-	print("Largest-Remainder Imperiali")
-	res = LR_Imperiali(AddInitial(VotesLR), 10)
-	for r in res: print(r)
-	
-	print
-	
+	print("Adjusted Divisor")
+	dumpout(AdjustedDivisor(-1, TestSet, 100))
+	dumpout(AdjustedDivisor(0, TestSet, 100))
+	dumpout(AdjustedDivisor(1, TestSet, 100))
+	dumpout(AdjustedDivisor(-1, TestSet, 100, MaxSeats=30))
+	dumpout(AdjustedDivisor(0, TestSet, 100, MaxSeats=30))
+	dumpout(AdjustedDivisor(1, TestSet, 100, MaxSeats=30))
+	dumpout(AdjustedDivisor(-1, TestSet, 100, MinSeats=15))
+	dumpout(AdjustedDivisor(0, TestSet, 100, MinSeats=15))
+	dumpout(AdjustedDivisor(1, TestSet, 100, MinSeats=15))
+	dumpout(AdjustedDivisor(-1, TestSet, 100, MinSeats=15, MaxSeats=30))
+	dumpout(AdjustedDivisor(0, TestSet, 100, MinSeats=15, MaxSeats=30))
+	dumpout(AdjustedDivisor(1, TestSet, 100, MinSeats=15, MaxSeats=30))

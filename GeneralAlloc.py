@@ -37,7 +37,7 @@ MethodList = (
 	("HA Hunt-Hill", \
 		lambda v, n: HighestAverages(HA_Divisors["HuntingtonHill"], AddInitial(v,1), n)),
 	("HA Danish", \
-		lambda v, n: HighestAverages(HA_Divisors["SainteLague"], AddInitial(v), n)),
+		lambda v, n: HighestAverages(HA_Divisors["Danish"], AddInitial(v), n)),
 	("HA Sainte-Lague", \
 		lambda v, n: HighestAverages(HA_Divisors["SainteLague"], AddInitial(v), n)),
 	("HA Modified SL", \
