@@ -34,6 +34,10 @@ USHouseAlloc.py
 USSenateAlloc.py
 - Args:
   - Tab-delimited data file with each row having (state) (population) (actual or estimated number of Reps)
+  - (optional) algorithm code:
+    - (default) 0: Huntington-Hill
+    - 1: square of Huntington-Hill divisor; makes a square-root effect
+    - -1: square root of the population 
   - (optional) average number of Senators per state (default: 2)
   - (optional) maximum number of Senators in each state (default: no maximum)
 - Returns:
