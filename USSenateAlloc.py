@@ -6,17 +6,25 @@
 # Input data file (3 columns: state, population, actual/estimated Rep count)
 
 import sys
+from math import sqrt
 from PropAlloc import HighestAverages, HA_Divisors, AddInitial
 
 if len(sys.argv) <= 1:
 	print("Needs:")
 	print("US-state data file: (name, population, actual/estimated Rep count)")
+	print("(optional) algorithm code: 0 (1: sqr(HH), -1: sqrt(pops))")
 	print("(optional) average number of Senators per state (default: 2)")
 	print("(optional) maximum number of Senators per state (default: no limit)")
 	sys.exit()
-infile = sys.argv[1]
-RelNumSeats = int(sys.argv[2]) if len(sys.argv) > 2 else 2
-MaxSeats = int(sys.argv[3]) if len(sys.argv) > 3 else None
+
+argn = 1
+infile = sys.argv[argn]
+argn += 1
+AlgoCode = int(sys.argv[argn]) if len(sys.argv) > argn else 0
+argn += 1
+RelNumSeats = int(sys.argv[argn]) if len(sys.argv) > argn else 2
+argn += 1
+MaxSeats = int(sys.argv[argn]) if len(sys.argv) > argn else None
 
 
 # The data on states
@@ -45,12 +53,19 @@ for st, ab in StAbbrevs:
 	NameToAbbrev[st] = ab
 
 # Will bake Huntington-Hill into the code,
-# since that is used by the House
+# since that is used by the House.
 
+# Use the square of that divisor if selected
+def HHSquare(s): return s*(s+1)
+dvsrf = HHSquare if AlgoCode > 0 else HA_Divisors["HuntingtonHill"]
+
+# Use the square root of the populations if selected
+if AlgoCode < 0:
+	for k in range(len(States)):
+		States[k][1] = sqrt(1.*States[k][1])
 
 NumSeats = RelNumSeats*len(States)
-res = HighestAverages(HA_Divisors["HuntingtonHill"], \
-	AddInitial(States,1), NumSeats, MaxSeats=MaxSeats)
+res = HighestAverages(dvsrf, AddInitial(States,1), NumSeats, MaxSeats=MaxSeats)
 StatesPerNum = {}
 for r in res:
 	if r[2] not in StatesPerNum:
